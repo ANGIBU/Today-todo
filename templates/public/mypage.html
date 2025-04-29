@@ -1,0 +1,96 @@
+<!-- templates/public/mypage.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지 - 투데이 투두</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_01.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mypage.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>마이 페이지</h1>
+            <nav class="top-nav">
+                <a href="{{ url_for('main') }}" class="nav-item">홈</a>
+                <a href="{{ url_for('explore') }}" class="nav-item">둘러보기</a>
+                <a href="{{ url_for('notifications') }}" class="nav-item">알림</a>
+                <a href="{{ url_for('mypage') }}" class="nav-item active">My</a>
+            </nav>
+        </header>
+        
+        <main>
+            <div class="profile-content">
+                <!-- 프로필 정보 섹션 -->
+                <section class="profile-section">
+                    <div class="profile-header">
+                        <div class="profile-image">
+                            <img src="{{ url_for('static', filename='image/' + user.profile_image) }}" alt="프로필 이미지">
+                        </div>
+                        <div class="profile-info">
+                            <h2 class="profile-nickname" id="profileNickname">{{ user.nickname }}</h2>
+                            <p class="profile-username">@{{ user.username }}</p>
+                            <p class="profile-bio" id="profileBio">{{ user.bio or '소개글이 없습니다.' }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-stats">
+                        <div class="stat-item" id="followersCount">
+                            <span class="stat-label">팔로워</span>
+                            <span class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item" id="followingCount">
+                            <span class="stat-label">팔로잉</span>
+                            <span class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item" id="todosCount">
+                            <span class="stat-label">완료한 할 일</span>
+                            <span class="stat-value">0</span>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 설정 버튼 -->
+                <section class="profile-actions">
+                    <a href="{{ url_for('settings') }}" class="settings-btn">
+                        <i class="fas fa-cog"></i> 설정
+                    </a>
+                </section>
+                
+                <!-- 로그아웃 버튼 -->
+                <section class="logout-section">
+                    <a href="{{ url_for('logout') }}" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> 로그아웃
+                    </a>
+                </section>
+            </div>
+        </main>
+        
+        <footer>
+            <div class="bottom-nav">
+                <a href="{{ url_for('main') }}" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>홈</span>
+                </a>
+                <a href="{{ url_for('explore') }}" class="nav-item">
+                    <i class="fas fa-compass"></i>
+                    <span>둘러보기</span>
+                </a>
+                <a href="{{ url_for('notifications') }}" class="nav-item">
+                    <i class="fas fa-bell"></i>
+                    <span>알림</span>
+                </a>
+                <a href="{{ url_for('mypage') }}" class="nav-item active">
+                    <i class="fas fa-user"></i>
+                    <span>My</span>
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- JavaScript 연결 -->
+    <script src="{{ url_for('static', filename='js/mypage.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!-- templates/public/explore.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>둘러보기 - 투데이 투두</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_01.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/explore.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>둘러보기</h1>
+            <nav class="top-nav">
+                <a href="{{ url_for('main') }}" class="nav-item">홈</a>
+                <a href="{{ url_for('explore') }}" class="nav-item active">둘러보기</a>
+                <a href="{{ url_for('notifications') }}" class="nav-item">알림</a>
+                <a href="{{ url_for('mypage') }}" class="nav-item">My</a>
+            </nav>
+        </header>
+        
+        <main>
+            <div class="explore-content">
+                <!-- 팔로우 중인 사용자 목록 -->
+                <section class="following-section">
+                    <h2>팔로우 중인 사용자</h2>
+                    <div class="users-scroll" id="followingUsers">
+                        <!-- 사용자 목록 로딩 중 표시 -->
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner fa-pulse"></i>
+                            <span>로딩 중...</span>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 팔로우 중인 사용자들의 할 일 -->
+                <section class="shared-todos-section">
+                    <h2>팔로우 중인 사용자의 할 일</h2>
+                    <div class="shared-todos" id="sharedTodos">
+                        <!-- 할 일 목록 로딩 중 표시 -->
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner fa-pulse"></i>
+                            <span>로딩 중...</span>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 추천 사용자 목록 -->
+                <section class="recommended-section">
+                    <h2>추천 사용자</h2>
+                    <div class="users-grid" id="recommendedUsers">
+                        <!-- 사용자 목록 로딩 중 표시 -->
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner fa-pulse"></i>
+                            <span>로딩 중...</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+        
+        <footer>
+            <div class="bottom-nav">
+                <a href="{{ url_for('main') }}" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>홈</span>
+                </a>
+                <a href="{{ url_for('explore') }}" class="nav-item active">
+                    <i class="fas fa-compass"></i>
+                    <span>둘러보기</span>
+                </a>
+                <a href="{{ url_for('notifications') }}" class="nav-item">
+                    <i class="fas fa-bell"></i>
+                    <span>알림</span>
+                </a>
+                <a href="{{ url_for('mypage') }}" class="nav-item">
+                    <i class="fas fa-user"></i>
+                    <span>My</span>
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- JavaScript 연결 -->
+    <script src="{{ url_for('static', filename='js/explore.js') }}"></script>
+</body>
+</html>
