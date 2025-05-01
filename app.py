@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 app = Flask(__name__)
+app.config['SERVER_NAME'] = 'today-todo.smartlivon.com'  # 도메인 이름 설정
 app.config['SECRET_KEY'] = 'todo_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -301,4 +302,4 @@ def delete_topic(topic_id):
     return jsonify({'result': 'success'})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5004, debug=False)
