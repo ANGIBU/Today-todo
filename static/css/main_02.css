@@ -1,0 +1,412 @@
+/* static/css/main_02.css */
+
+/* 할 일 목록 스타일 */
+.todos-container {
+    background-color: #fff;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.todos-header {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.todos-header h2 {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.tasks-list {
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.task-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #f0f0f0;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.task-checkbox {
+    margin: 0 10px;
+}
+
+.task-checkbox input {
+    display: none;
+}
+
+.task-checkbox label {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+}
+
+.task-checkbox input:checked + label::after {
+    content: '\2713';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #666;
+    font-weight: bold;
+}
+
+.task-content {
+    flex: 1;
+    margin-left: 5px;
+}
+
+.task-title {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.task-description {
+    font-size: 12px;
+    color: #666;
+}
+
+.task-actions {
+    display: flex;
+    gap: 5px;
+    /* 항상 표시되도록 변경 */
+    opacity: 1;
+    transition: none;
+}
+
+.task-actions button {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    color: #666;
+}
+
+/* 핀 버튼 스타일 */
+.pin-task {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    color: #888;
+    padding: 3px;
+    transition: transform 0.2s ease;
+}
+
+.pin-task:hover {
+    color: #555;
+}
+
+.pin-task .fa-thumbtack.active {
+    color: #666;
+    transform: rotate(-45deg);
+}
+
+.task-item.pinned {
+    background-color: #f8f8f8;
+    border-left: 3px solid #888;
+}
+
+/* 카테고리 스타일 */
+.category-container {
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    font-weight: bold;
+    font-size: 14px;
+    background-color: #f8f8f8;
+}
+
+.category-name {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.category-tasks {
+    padding: 0;
+}
+
+.category-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.add-task-btn, .delete-category-btn, .edit-category-btn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+    border-radius: 3px;
+    opacity: 0.7;
+}
+
+.add-task-btn:hover, .delete-category-btn:hover, .edit-category-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    opacity: 1;
+}
+
+.add-task-btn {
+    color: #333;
+}
+
+.delete-category-btn {
+    color: #e07070;
+}
+
+.edit-category-btn {
+    color: #333;
+}
+
+/* 카테고리 추가 버튼 스타일 수정 */
+.add-category-btn {
+    width: calc(100% - 20px);
+    margin: 10px auto;
+    padding: 10px;
+    background-color: #f5f5f5; /* 초록색에서 원래 색상으로 변경 */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: background-color 0.2s;
+}
+
+.add-category-btn:hover {
+    background-color: #eeeeee;
+}
+
+.add-category-btn i {
+    font-size: 14px;
+    color: #666; /* 아이콘 색상도 회색으로 복원 */
+}
+
+.empty-list {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-size: 14px;
+}
+
+.empty-category-tasks {
+    display: none;
+}
+
+/* 인라인 편집 폼 스타일 */
+.inline-form-container {
+    margin: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.inline-form-header {
+    padding: 8px 10px;
+    background-color: #f8f8f8;
+    color: #333;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.inline-form-header h3 {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.inline-form-body {
+    padding: 15px;
+}
+
+.inline-category-form .form-group {
+    margin-bottom: 15px;
+}
+
+.inline-form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.btn-save, .btn-cancel {
+    padding: 8px 15px;
+    border-radius: 4px;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.btn-save {
+    background-color: #666; /* 초록색에서 원래 색상으로 변경 */
+    color: white;
+    flex: 1;
+}
+
+.btn-cancel {
+    background-color: #f0f0f0;
+    color: #666;
+    border: 1px solid #ddd;
+}
+
+.btn-save:hover {
+    background-color: #888; /* 호버 시 색상도 변경 */
+}
+
+.btn-cancel:hover {
+    background-color: #e0e0e0;
+}
+
+/* 색상 선택 옵션 스타일 */
+.color-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+}
+
+.color-option {
+    position: relative;
+}
+
+.color-option input[type="radio"] {
+    display: none;
+}
+
+.color-option label {
+    display: block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.color-option input[type="radio"]:checked + label {
+    box-shadow: 0 0 0 2px #666, 0 0 0 4px rgba(102, 102, 102, 0.2);
+}
+
+/* 인라인 할 일 폼 스타일 */
+.inline-task-form-container {
+    margin: 10px 0;
+    padding: 8px;
+    background-color: #f9f9f9;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.inline-task-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.task-form-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.inline-task-form input[name="taskTitle"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.inline-task-form textarea[name="taskDescription"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.task-form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.task-form-actions .btn-save {
+    background-color: #666; /* 초록색에서 원래 색상으로 변경 */
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.task-form-actions .btn-cancel {
+    background-color: #f0f0f0;
+    color: #666;
+    border: 1px solid #ddd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.task-form-actions .btn-save:hover {
+    background-color: #888; /* 호버 시 색상도 변경 */
+}
+
+.task-form-actions .btn-cancel:hover {
+    background-color: #e0e0e0;
+}
+
+/* 카테고리 입력 필드 스타일 */
+.category-name-field {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+/* 카테고리 색상 선택 스타일 */
+.color-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+}
