@@ -1,4 +1,4 @@
-# app.py
+# today_todo/app.py
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 from datetime import datetime
 import os
