@@ -9,7 +9,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 app = Flask(__name__)
-app.config['SERVER_NAME'] = 'today-todo.smartlivon.com'  # 도메인 이름 설정
+# 도커 환경에서는 SERVER_NAME 설정을 제거하고 호스트/포트를 직접 지정
+# app.config['SERVER_NAME'] = 'today-todo.smartlivon.com'
 app.config['SECRET_KEY'] = 'todo_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
