@@ -1,8 +1,10 @@
-cat > /home/livon/projects/today_todo/requirements.txt << 'EOL'
-flask==2.0.1
+Flask==2.0.1
+Werkzeug==2.0.1
+Jinja2==3.0.1
+itsdangerous==2.0.1
+click==8.0.1
 flask-sqlalchemy==2.5.1
 pymysql==1.0.2
 flask-login==0.5.0
-python-dotenv==0.19.0
-gunicorn==20.1.0
-EOL
+flask-wtf==0.15.1
+
