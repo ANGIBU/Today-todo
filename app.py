@@ -38,9 +38,14 @@ with app.app_context():
         db.session.add(default_user)
         db.session.commit()
 
-# 메인 페이지
+# 루트 경로를 todo로 리다이렉트
 @app.route('/')
-def main():
+def index():
+    return redirect(url_for('todo'))
+
+# ToDo 메인 페이지
+@app.route('/todo')
+def todo():
     user = None
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
@@ -87,7 +92,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['nickname'] = user.nickname
-            return redirect(url_for('main'))
+            return redirect(url_for('todo'))
         
         flash('아이디 또는 비밀번호가 잘못되었습니다.')
     
@@ -132,7 +137,7 @@ def logout():
     session.pop('user_id', None)
     session.pop('username', None)
     session.pop('nickname', None)
-    return redirect(url_for('main'))
+    return redirect(url_for('todo'))
 
 # 할일 API 엔드포인트
 @app.route('/api/todos', methods=['GET'])

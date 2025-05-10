@@ -5,6 +5,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 인라인 카테고리 폼 렌더링
     function renderInlineCategoryForm(category = null) {
+        // 이미 폼이 열려있는지 확인
+        if (document.querySelector('.inline-form-container')) {
+            return; // 이미 폼이 열려있으면 추가로 생성하지 않음
+        }
+        
         let colorOptions = '';
         // 추가된 색상 (더 다양한 색상 포함, 짙은 계열 위주)
         const colors = [
@@ -75,7 +80,8 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelInlineForm();
         });
         
-        // 인라인 폼 추가
+        // 인라인 폼 추가 - 카테고리 추가 버튼 바로 위에 삽입
+        const addCategoryBtn = document.getElementById('addCategoryBtn');
         if (category) {
             // 수정 모드: 기존 카테고리 컨테이너 다음에 삽입
             const categoryContainer = document.querySelector(`.category-container[data-id="${category.id}"]`);
@@ -84,8 +90,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 categoryContainer.insertAdjacentElement('afterend', formContainer);
             }
         } else {
-            // 추가 모드: 맨 뒤에 추가
-            tasksList.appendChild(formContainer);
+            // 추가 모드: 카테고리 추가 버튼 바로 위에 삽입
+            addCategoryBtn.parentNode.insertBefore(formContainer, addCategoryBtn);
         }
         
         // 카테고리 이름 입력 필드에 자동 포커스
@@ -573,6 +579,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 이벤트 리스너 등록
     document.addEventListener('addCategory', function() {
+        // 이미 폼이 열려있으면 무시
+        if (window.todoApp.isAddingCategory || window.todoApp.isEditingCategory || 
+            window.todoApp.isAddingTask || window.todoApp.isEditingTask) return;
+            
+        window.todoApp.isAddingCategory = true;
         renderInlineCategoryForm();
     });
     
@@ -580,8 +591,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (tasksList) {
         tasksList.addEventListener('click', handleTasksListClick);
         tasksList.addEventListener('submit', handleInlineFormSubmit);
-        document.addEventListener('keydown', handleInlineFormKeydown);
     }
+    
+    // document 레벨 이벤트 리스너 등록
+    document.addEventListener('keydown', handleInlineFormKeydown);
     
     // 카테고리 추가 버튼 클릭 이벤트 직접 등록
     const addCategoryBtn = document.getElementById('addCategoryBtn');

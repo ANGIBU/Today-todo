@@ -94,10 +94,11 @@
     background-color: #f8f8f8;
 }
 
-/* 텍스트 색상 선택 스타일 */
+/* 텍스트 색상 선택 스타일 - 수정된 부분 */
 .color-picker {
     position: absolute;
-    left: 30px;
+    top: 100%;
+    left: 0;
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -106,6 +107,11 @@
     width: 220px;
     padding: 10px;
     display: none;
+    margin-top: 5px;
+}
+
+.color-btn {
+    position: relative;
 }
 
 .color-options {
@@ -197,51 +203,53 @@
                 <option value="5">더 크게</option>
             </select>
             <div class="toolbar-divider"></div>
-            <!-- 텍스트 색상 선택 버튼 추가 -->
-            <button class="toolbar-btn color-btn" title="텍스트 색상"><i class="fas fa-palette"></i></button>
+            <!-- 텍스트 색상 선택 버튼 추가 - position:relative 추가 -->
+            <div class="color-btn-wrapper" style="position: relative;">
+                <button class="toolbar-btn color-btn" title="텍스트 색상"><i class="fas fa-palette"></i></button>
+                <!-- 색상 선택 패널 - 버튼 안에 위치 -->
+                <div class="color-picker" id="colorPicker">
+                    <div class="color-options">
+                        <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
+                        <div class="color-option" style="background-color: #434343;" data-color="#434343"></div>
+                        <div class="color-option" style="background-color: #666666;" data-color="#666666"></div>
+                        <div class="color-option" style="background-color: #999999;" data-color="#999999"></div>
+                        <div class="color-option" style="background-color: #b7b7b7;" data-color="#b7b7b7"></div>
+                        <div class="color-option" style="background-color: #cccccc;" data-color="#cccccc"></div>
+                        <div class="color-option" style="background-color: #d9d9d9;" data-color="#d9d9d9"></div>
+                        <div class="color-option" style="background-color: #efefef;" data-color="#efefef"></div>
+                        <div class="color-option" style="background-color: #f3f3f3;" data-color="#f3f3f3"></div>
+                        <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
+                        <div class="color-option" style="background-color: #980000;" data-color="#980000"></div>
+                        <div class="color-option" style="background-color: #ff0000;" data-color="#ff0000"></div>
+                        <div class="color-option" style="background-color: #ff9900;" data-color="#ff9900"></div>
+                        <div class="color-option" style="background-color: #ffff00;" data-color="#ffff00"></div>
+                        <div class="color-option" style="background-color: #00ff00;" data-color="#00ff00"></div>
+                        <div class="color-option" style="background-color: #00ffff;" data-color="#00ffff"></div>
+                        <div class="color-option" style="background-color: #4a86e8;" data-color="#4a86e8"></div>
+                        <div class="color-option" style="background-color: #0000ff;" data-color="#0000ff"></div>
+                        <div class="color-option" style="background-color: #9900ff;" data-color="#9900ff"></div>
+                        <div class="color-option" style="background-color: #ff00ff;" data-color="#ff00ff"></div>
+                        <div class="color-option" style="background-color: #e6b8af;" data-color="#e6b8af"></div>
+                        <div class="color-option" style="background-color: #f4cccc;" data-color="#f4cccc"></div>
+                        <div class="color-option" style="background-color: #fce5cd;" data-color="#fce5cd"></div>
+                        <div class="color-option" style="background-color: #fff2cc;" data-color="#fff2cc"></div>
+                        <div class="color-option" style="background-color: #d9ead3;" data-color="#d9ead3"></div>
+                        <div class="color-option" style="background-color: #d0e0e3;" data-color="#d0e0e3"></div>
+                        <div class="color-option" style="background-color: #c9daf8;" data-color="#c9daf8"></div>
+                        <div class="color-option" style="background-color: #cfe2f3;" data-color="#cfe2f3"></div>
+                        <div class="color-option" style="background-color: #d9d2e9;" data-color="#d9d2e9"></div>
+                        <div class="color-option" style="background-color: #ead1dc;" data-color="#ead1dc"></div>
+                        <div class="color-option" style="background-color: #dd7e6b;" data-color="#dd7e6b"></div>
+                        <div class="color-option" style="background-color: #ea9999;" data-color="#ea9999"></div>
+                        <div class="color-option" style="background-color: #f9cb9c;" data-color="#f9cb9c"></div>
+                        <div class="color-option" style="background-color: #ffe599;" data-color="#ffe599"></div>
+                        <div class="color-option" style="background-color: #b6d7a8;" data-color="#b6d7a8"></div>
+                        <div class="color-option" style="background-color: #a2c4c9;" data-color="#a2c4c9"></div>
+                    </div>
+                </div>
+            </div>
             <button class="toolbar-btn" data-command="insertImage" title="이미지 삽입"><i class="fas fa-image"></i></button>
             <input type="file" id="imageUpload" accept="image/*" style="display: none;" autocomplete="off">
-        </div>
-        <!-- 색상 선택 패널 추가 -->
-        <div class="color-picker" id="colorPicker">
-            <div class="color-options">
-                <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
-                <div class="color-option" style="background-color: #434343;" data-color="#434343"></div>
-                <div class="color-option" style="background-color: #666666;" data-color="#666666"></div>
-                <div class="color-option" style="background-color: #999999;" data-color="#999999"></div>
-                <div class="color-option" style="background-color: #b7b7b7;" data-color="#b7b7b7"></div>
-                <div class="color-option" style="background-color: #cccccc;" data-color="#cccccc"></div>
-                <div class="color-option" style="background-color: #d9d9d9;" data-color="#d9d9d9"></div>
-                <div class="color-option" style="background-color: #efefef;" data-color="#efefef"></div>
-                <div class="color-option" style="background-color: #f3f3f3;" data-color="#f3f3f3"></div>
-                <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
-                <div class="color-option" style="background-color: #980000;" data-color="#980000"></div>
-                <div class="color-option" style="background-color: #ff0000;" data-color="#ff0000"></div>
-                <div class="color-option" style="background-color: #ff9900;" data-color="#ff9900"></div>
-                <div class="color-option" style="background-color: #ffff00;" data-color="#ffff00"></div>
-                <div class="color-option" style="background-color: #00ff00;" data-color="#00ff00"></div>
-                <div class="color-option" style="background-color: #00ffff;" data-color="#00ffff"></div>
-                <div class="color-option" style="background-color: #4a86e8;" data-color="#4a86e8"></div>
-                <div class="color-option" style="background-color: #0000ff;" data-color="#0000ff"></div>
-                <div class="color-option" style="background-color: #9900ff;" data-color="#9900ff"></div>
-                <div class="color-option" style="background-color: #ff00ff;" data-color="#ff00ff"></div>
-                <div class="color-option" style="background-color: #e6b8af;" data-color="#e6b8af"></div>
-                <div class="color-option" style="background-color: #f4cccc;" data-color="#f4cccc"></div>
-                <div class="color-option" style="background-color: #fce5cd;" data-color="#fce5cd"></div>
-                <div class="color-option" style="background-color: #fff2cc;" data-color="#fff2cc"></div>
-                <div class="color-option" style="background-color: #d9ead3;" data-color="#d9ead3"></div>
-                <div class="color-option" style="background-color: #d0e0e3;" data-color="#d0e0e3"></div>
-                <div class="color-option" style="background-color: #c9daf8;" data-color="#c9daf8"></div>
-                <div class="color-option" style="background-color: #cfe2f3;" data-color="#cfe2f3"></div>
-                <div class="color-option" style="background-color: #d9d2e9;" data-color="#d9d2e9"></div>
-                <div class="color-option" style="background-color: #ead1dc;" data-color="#ead1dc"></div>
-                <div class="color-option" style="background-color: #dd7e6b;" data-color="#dd7e6b"></div>
-                <div class="color-option" style="background-color: #ea9999;" data-color="#ea9999"></div>
-                <div class="color-option" style="background-color: #f9cb9c;" data-color="#f9cb9c"></div>
-                <div class="color-option" style="background-color: #ffe599;" data-color="#ffe599"></div>
-                <div class="color-option" style="background-color: #b6d7a8;" data-color="#b6d7a8"></div>
-                <div class="color-option" style="background-color: #a2c4c9;" data-color="#a2c4c9"></div>
-            </div>
         </div>
         <div class="diary-content">
             <div id="diaryEditor" contenteditable="true" placeholder="오늘 하루를 기록해보세요..."></div>
@@ -289,16 +297,23 @@
             });
         });
         
-        // 색상 선택 버튼 클릭 이벤트
+        // 색상 선택 버튼 클릭 이벤트 - 수정된 부분
         colorBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation(); // 이벤트 전파 중지
             colorPicker.style.display = colorPicker.style.display === 'none' || colorPicker.style.display === '' ? 'block' : 'none';
         });
         
-        // 색상 선택 이벤트
+        // 색상 선택 이벤트 - 수정된 부분
         colorOptions.forEach(option => {
-            option.addEventListener('click', function() {
+            option.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation(); // 이벤트 전파 중지
                 const color = this.dataset.color;
+                // 선택 범위가 없는 경우 전체 텍스트 선택
+                if (!window.getSelection().toString()) {
+                    document.execCommand('selectAll', false, null);
+                }
                 document.execCommand('foreColor', false, color);
                 colorPicker.style.display = 'none';
                 diaryEditor.focus();
@@ -340,9 +355,9 @@
             this.value = '';
         });
         
-        // 외부 클릭 시 색상 선택기 닫기
+        // 외부 클릭 시 색상 선택기 닫기 - 수정된 부분
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('.color-btn') && !e.target.closest('.color-picker')) {
+            if (!e.target.closest('.color-btn-wrapper')) {
                 colorPicker.style.display = 'none';
             }
         });
