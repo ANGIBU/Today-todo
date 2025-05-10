@@ -1,103 +1,70 @@
 <!-- templates/public/settings.html -->
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>설정 - 투데이 투두</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_01.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="{{ url_for('mypage') }}" class="back-btn">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <h1>설정</h1>
-            <a href="{{ url_for('mypage') }}" class="login-btn">{{ user.nickname }}</a>
-        </header>
-        
-        <main>
-            <div class="settings-content">
-                <!-- 프로필 설정 섹션 -->
-                <section class="settings-section">
-                    <h2>프로필 설정</h2>
-                    <form id="profileForm" class="settings-form">
-                        <div class="form-group">
-                            <label for="nickname">닉네임</label>
-                            <input type="text" id="nickname" name="nickname" value="{{ user.nickname }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="bio">소개글</label>
-                            <textarea id="bio" name="bio" rows="3">{{ user.bio or '' }}</textarea>
-                        </div>
-                        <button type="submit" class="save-btn">저장</button>
-                    </form>
-                </section>
-                
-                <!-- 계정 설정 섹션 -->
-                <section class="settings-section">
-                    <h2>계정 정보</h2>
-                    <div class="info-item">
-                        <span class="info-label">아이디</span>
-                        <span class="info-value">{{ user.username }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">이메일</span>
-                        <span class="info-value">{{ user.email }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">가입일</span>
-                        <span class="info-value">{{ user.created_at.strftime('%Y년 %m월 %d일') }}</span>
-                    </div>
-                </section>
-                
-                <!-- 알림 설정 섹션 -->
-                <section class="settings-section">
-                    <h2>알림 설정</h2>
-                    <div class="toggle-item">
-                        <span class="toggle-label">팔로우 알림</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="followNotification" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="toggle-item">
-                        <span class="toggle-label">할 일 공유 알림</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="todoNotification" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </section>
-            </div>
-        </main>
-        
-        <footer>
-            <div class="bottom-nav">
-                <a href="{{ url_for('main') }}" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>홈</span>
-                </a>
-                <a href="{{ url_for('explore') }}" class="nav-item">
-                    <i class="fas fa-compass"></i>
-                    <span>둘러보기</span>
-                </a>
-                <a href="{{ url_for('notifications') }}" class="nav-item">
-                    <i class="fas fa-bell"></i>
-                    <span>알림</span>
-                </a>
-                <a href="{{ url_for('mypage') }}" class="nav-item active">
-                    <i class="fas fa-user"></i>
-                    <span>My</span>
-                </a>
-            </div>
-        </footer>
-    </div>
+{% extends "layout.html" %}
 
-    <!-- JavaScript 연결 -->
-    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
-</body>
-</html>
+{% block title %}설정 - 투데이 투두{% endblock %}
+
+{% block header_title %}설정{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="settings-content">
+    <!-- 프로필 설정 섹션 -->
+    <section class="settings-section">
+        <h2>프로필 설정</h2>
+        <form id="profileForm" class="settings-form">
+            <div class="form-group">
+                <label for="nickname">닉네임</label>
+                <input type="text" id="nickname" name="nickname" value="{{ user.nickname }}">
+            </div>
+            <div class="form-group">
+                <label for="bio">소개글</label>
+                <textarea id="bio" name="bio" rows="3">{{ user.bio or '' }}</textarea>
+            </div>
+            <button type="submit" class="save-btn">저장</button>
+        </form>
+    </section>
+    
+    <!-- 계정 설정 섹션 -->
+    <section class="settings-section">
+        <h2>계정 정보</h2>
+        <div class="info-item">
+            <span class="info-label">아이디</span>
+            <span class="info-value">{{ user.username }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">이메일</span>
+            <span class="info-value">{{ user.email }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">가입일</span>
+            <span class="info-value">{{ user.created_at.strftime('%Y년 %m월 %d일') }}</span>
+        </div>
+    </section>
+    
+    <!-- 알림 설정 섹션 -->
+    <section class="settings-section">
+        <h2>알림 설정</h2>
+        <div class="toggle-item">
+            <span class="toggle-label">팔로우 알림</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="followNotification" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="toggle-item">
+            <span class="toggle-label">할 일 공유 알림</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="todoNotification" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

@@ -1,438 +1,401 @@
 <!-- templates/public/main.html -->
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>투데이 투두</title>
-    <!-- 폰트어썸 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- CSS 연결 -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_01.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_02.css') }}">
-    <style>
-    /* 모바일 스타일 알림 팝업 */
-    .mobile-alert-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s, visibility 0.3s;
-    }
+{% extends "layout.html" %}
 
-    .mobile-alert-overlay.show {
-        opacity: 1;
-        visibility: visible;
-    }
+{% block title %}투데이 투두{% endblock %}
 
-    .mobile-alert {
-        background-color: white;
-        width: 80%;
-        max-width: 400px;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transform: translateY(20px);
-        transition: transform 0.3s;
-    }
+{% block header_title %}오늘의 ToDo{% endblock %}
 
-    .mobile-alert-overlay.show .mobile-alert {
-        transform: translateY(0);
-    }
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main_02.css') }}">
+<style>
+/* 모바일 스타일 알림 팝업 */
+.mobile-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
 
-    .mobile-alert-header {
-        padding: 15px 20px;
-        border-bottom: 1px solid #eee;
-        text-align: center;
-    }
+.mobile-alert-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
 
-    .mobile-alert-title {
-        font-size: 18px;
-        font-weight: bold;
-        color: #333;
-        margin: 0;
-    }
+.mobile-alert {
+    background-color: white;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(20px);
+    transition: transform 0.3s;
+}
 
-    .mobile-alert-body {
-        padding: 20px;
-        text-align: center;
-        color: #666;
-        font-size: 16px;
-    }
+.mobile-alert-overlay.show .mobile-alert {
+    transform: translateY(0);
+}
 
-    .mobile-alert-actions {
-        display: flex;
-        border-top: 1px solid #eee;
-    }
+.mobile-alert-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
 
-    .mobile-alert-btn {
-        flex: 1;
-        border: none;
-        background: none;
-        padding: 15px;
-        font-size: 16px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
+.mobile-alert-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
 
-    .mobile-alert-btn.cancel {
-        color: #666;
-        border-right: 1px solid #eee;
-    }
+.mobile-alert-body {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-size: 16px;
+}
 
-    .mobile-alert-btn.confirm {
-        color: #e74c3c;
-        font-weight: bold;
-    }
+.mobile-alert-actions {
+    display: flex;
+    border-top: 1px solid #eee;
+}
 
-    .mobile-alert-btn:hover {
-        background-color: #f8f8f8;
-    }
+.mobile-alert-btn {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 15px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
 
-    /* 텍스트 색상 선택 스타일 */
-    .color-picker {
-        position: absolute;
-        left: 30px;
-        background-color: #fff;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        z-index: 1000;
-        width: 220px;
-        padding: 10px;
-        display: none;
-    }
+.mobile-alert-btn.cancel {
+    color: #666;
+    border-right: 1px solid #eee;
+}
 
-    .color-options {
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 5px;
-    }
+.mobile-alert-btn.confirm {
+    color: #e74c3c;
+    font-weight: bold;
+}
 
-    .color-option {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: transform 0.1s;
-    }
+.mobile-alert-btn:hover {
+    background-color: #f8f8f8;
+}
 
-    .color-option:hover {
-        transform: scale(1.1);
-    }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="{{ url_for('notifications') }}" class="notification-btn"><i class="fas fa-bell"></i></a>
-            <h1>오늘의 Todo</h1>
-            {% if user %}
-                <a href="{{ url_for('mypage') }}" class="login-btn">{{ user.nickname }}</a>
-            {% else %}
-                <a href="{{ url_for('auth') }}" class="login-btn">로그인</a>
-            {% endif %}
-        </header>
-        
-        <main>
-            <div class="content-wrapper">
-                <!-- 달력 부분 -->
-                <div class="calendar-container">
-                    <div class="calendar-header">
-                        <div class="year-month-display" id="currentYearMonth"></div>
-                        <div class="calendar-navigation">
-                            <button id="prevMonth" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
-                            <button id="nextMonth" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                    <table class="calendar-table">
-                        <thead>
-                            <tr>
-                                <th>월</th>
-                                <th>화</th>
-                                <th>수</th>
-                                <th>목</th>
-                                <th>금</th>
-                                <th>토</th>
-                                <th>일</th>
-                            </tr>
-                        </thead>
-                        <tbody id="calendarBody">
-                            <!-- 달력 내용은 JavaScript로 생성됨 -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- 할 일 목록 부분 -->
-                <div class="todos-container">
-                    <div class="todos-header">
-                        <h2>오늘의 할 일</h2>
-                    </div>
-                    <div class="tasks-list" id="tasksList">
-                        <!-- 할 일 목록은 JavaScript로 생성됨 -->
-                    </div>
-                    
-                    <!-- 카테고리 추가 버튼 -->
-                    <button id="addCategoryBtn" class="add-category-btn">
-                        <i class="fas fa-plus"></i> 카테고리 추가
-                    </button>
-                </div>
-                
-                <!-- 일기장 부분 -->
-                <div class="diary-container">
-                    <div class="diary-header">
-                        <h2>오늘의 일기</h2>
-                    </div>
-                    <div class="diary-toolbar">
-                        <button class="toolbar-btn" data-command="bold" title="굵게"><i class="fas fa-bold"></i></button>
-                        <button class="toolbar-btn" data-command="italic" title="기울임"><i class="fas fa-italic"></i></button>
-                        <button class="toolbar-btn" data-command="underline" title="밑줄"><i class="fas fa-underline"></i></button>
-                        <div class="toolbar-divider"></div>
-                        <select class="font-select" id="fontSelect">
-                            <option value="Arial">Arial</option>
-                            <option value="Verdana">Verdana</option>
-                            <option value="Times New Roman">Times New Roman</option>
-                            <option value="Courier New">Courier New</option>
-                            <option value="Georgia">Georgia</option>
-                        </select>
-                        <select class="font-size" id="fontSize">
-                            <option value="1">작게</option>
-                            <option value="2">보통</option>
-                            <option value="3" selected>중간</option>
-                            <option value="4">크게</option>
-                            <option value="5">더 크게</option>
-                        </select>
-                        <div class="toolbar-divider"></div>
-                        <!-- 텍스트 색상 선택 버튼 추가 -->
-                        <button class="toolbar-btn color-btn" title="텍스트 색상"><i class="fas fa-palette"></i></button>
-                        <button class="toolbar-btn" data-command="insertImage" title="이미지 삽입"><i class="fas fa-image"></i></button>
-                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" autocomplete="off">
-                    </div>
-                    <!-- 색상 선택 패널 추가 -->
-                    <div class="color-picker" id="colorPicker">
-                        <div class="color-options">
-                            <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
-                            <div class="color-option" style="background-color: #434343;" data-color="#434343"></div>
-                            <div class="color-option" style="background-color: #666666;" data-color="#666666"></div>
-                            <div class="color-option" style="background-color: #999999;" data-color="#999999"></div>
-                            <div class="color-option" style="background-color: #b7b7b7;" data-color="#b7b7b7"></div>
-                            <div class="color-option" style="background-color: #cccccc;" data-color="#cccccc"></div>
-                            <div class="color-option" style="background-color: #d9d9d9;" data-color="#d9d9d9"></div>
-                            <div class="color-option" style="background-color: #efefef;" data-color="#efefef"></div>
-                            <div class="color-option" style="background-color: #f3f3f3;" data-color="#f3f3f3"></div>
-                            <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
-                            <div class="color-option" style="background-color: #980000;" data-color="#980000"></div>
-                            <div class="color-option" style="background-color: #ff0000;" data-color="#ff0000"></div>
-                            <div class="color-option" style="background-color: #ff9900;" data-color="#ff9900"></div>
-                            <div class="color-option" style="background-color: #ffff00;" data-color="#ffff00"></div>
-                            <div class="color-option" style="background-color: #00ff00;" data-color="#00ff00"></div>
-                            <div class="color-option" style="background-color: #00ffff;" data-color="#00ffff"></div>
-                            <div class="color-option" style="background-color: #4a86e8;" data-color="#4a86e8"></div>
-                            <div class="color-option" style="background-color: #0000ff;" data-color="#0000ff"></div>
-                            <div class="color-option" style="background-color: #9900ff;" data-color="#9900ff"></div>
-                            <div class="color-option" style="background-color: #ff00ff;" data-color="#ff00ff"></div>
-                            <div class="color-option" style="background-color: #e6b8af;" data-color="#e6b8af"></div>
-                            <div class="color-option" style="background-color: #f4cccc;" data-color="#f4cccc"></div>
-                            <div class="color-option" style="background-color: #fce5cd;" data-color="#fce5cd"></div>
-                            <div class="color-option" style="background-color: #fff2cc;" data-color="#fff2cc"></div>
-                            <div class="color-option" style="background-color: #d9ead3;" data-color="#d9ead3"></div>
-                            <div class="color-option" style="background-color: #d0e0e3;" data-color="#d0e0e3"></div>
-                            <div class="color-option" style="background-color: #c9daf8;" data-color="#c9daf8"></div>
-                            <div class="color-option" style="background-color: #cfe2f3;" data-color="#cfe2f3"></div>
-                            <div class="color-option" style="background-color: #d9d2e9;" data-color="#d9d2e9"></div>
-                            <div class="color-option" style="background-color: #ead1dc;" data-color="#ead1dc"></div>
-                            <div class="color-option" style="background-color: #dd7e6b;" data-color="#dd7e6b"></div>
-                            <div class="color-option" style="background-color: #ea9999;" data-color="#ea9999"></div>
-                            <div class="color-option" style="background-color: #f9cb9c;" data-color="#f9cb9c"></div>
-                            <div class="color-option" style="background-color: #ffe599;" data-color="#ffe599"></div>
-                            <div class="color-option" style="background-color: #b6d7a8;" data-color="#b6d7a8"></div>
-                            <div class="color-option" style="background-color: #a2c4c9;" data-color="#a2c4c9"></div>
-                        </div>
-                    </div>
-                    <div class="diary-content">
-                        <div id="diaryEditor" contenteditable="true" placeholder="오늘 하루를 기록해보세요..."></div>
-                    </div>
-                    <div class="diary-footer">
-                        <button id="saveDiary" class="save-diary-btn">저장</button>
-                    </div>
-                </div>
+/* 텍스트 색상 선택 스타일 */
+.color-picker {
+    position: absolute;
+    left: 30px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+    width: 220px;
+    padding: 10px;
+    display: none;
+}
+
+.color-options {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+}
+
+.color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- 달력 부분 -->
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <div class="year-month-display" id="currentYearMonth"></div>
+            <div class="calendar-navigation">
+                <button id="prevMonth" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                <button id="nextMonth" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
             </div>
-        </main>
-        
-        <footer>
-            <div class="bottom-nav">
-                <a href="{{ url_for('main') }}" class="nav-item active">
-                    <i class="fas fa-home"></i>
-                    <span>홈</span>
-                </a>
-                <a href="{{ url_for('explore') }}" class="nav-item">
-                    <i class="fas fa-compass"></i>
-                    <span>둘러보기</span>
-                </a>
-                <a href="{{ url_for('notifications') }}" class="nav-item">
-                    <i class="fas fa-bell"></i>
-                    <span>알림</span>
-                </a>
-                <a href="{{ url_for('mypage') }}" class="nav-item">
-                    <i class="fas fa-user"></i>
-                    <span>My</span>
-                </a>
-            </div>
-        </footer>
+        </div>
+        <table class="calendar-table">
+            <thead>
+                <tr>
+                    <th>월</th>
+                    <th>화</th>
+                    <th>수</th>
+                    <th>목</th>
+                    <th>금</th>
+                    <th>토</th>
+                    <th>일</th>
+                </tr>
+            </thead>
+            <tbody id="calendarBody">
+                <!-- 달력 내용은 JavaScript로 생성됨 -->
+            </tbody>
+        </table>
     </div>
-
-    <!-- JavaScript 연결 -->
-    <script src="{{ url_for('static', filename='js/calendar_01.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/calendar_02.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/calendar_03.js') }}"></script>
     
-    <!-- 일기장 JavaScript -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const diaryEditor = document.getElementById('diaryEditor');
-            const saveDiaryBtn = document.getElementById('saveDiary');
-            const toolbarButtons = document.querySelectorAll('.toolbar-btn:not(.color-btn)');
-            const colorBtn = document.querySelector('.color-btn');
-            const colorPicker = document.getElementById('colorPicker');
-            const colorOptions = document.querySelectorAll('.color-option');
-            const fontSelect = document.getElementById('fontSelect');
-            const fontSize = document.getElementById('fontSize');
-            const imageUpload = document.getElementById('imageUpload');
-            
-            // 기본 포커스 설정
-            diaryEditor.focus();
-            
-            // 서식 툴바 버튼 이벤트
-            toolbarButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const command = this.dataset.command;
-                    
-                    if (command === 'insertImage') {
-                        imageUpload.click();
-                    } else {
-                        document.execCommand(command, false, null);
-                    }
-                    
-                    diaryEditor.focus();
-                });
-            });
-            
-            // 색상 선택 버튼 클릭 이벤트
-            colorBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                colorPicker.style.display = colorPicker.style.display === 'none' || colorPicker.style.display === '' ? 'block' : 'none';
-            });
-            
-            // 색상 선택 이벤트
-            colorOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    const color = this.dataset.color;
-                    document.execCommand('foreColor', false, color);
-                    colorPicker.style.display = 'none';
-                    diaryEditor.focus();
-                });
-            });
-            
-            // 폰트 선택 이벤트
-            fontSelect.addEventListener('change', function() {
-                document.execCommand('fontName', false, this.value);
-                diaryEditor.focus();
-            });
-            
-            // 폰트 크기 이벤트
-            fontSize.addEventListener('change', function() {
-                document.execCommand('fontSize', false, this.value);
-                diaryEditor.focus();
-            });
-            
-            // 이미지 업로드 이벤트 - 이동 기능 제거
-            imageUpload.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.className = 'diary-image';
-                        img.style.maxWidth = '100%';
-                        img.style.height = 'auto';
-                        
-                        // 이미지를 에디터 끝에 추가
-                        diaryEditor.appendChild(img);
-                    };
-                    
-                    reader.readAsDataURL(this.files[0]);
-                }
+    <!-- 할 일 목록 부분 -->
+    <div class="todos-container">
+        <div class="todos-header">
+            <h2>오늘의 할 일</h2>
+        </div>
+        <div class="tasks-list" id="tasksList">
+            <!-- 할 일 목록은 JavaScript로 생성됨 -->
+        </div>
+        
+        <!-- 카테고리 추가 버튼 -->
+        <button id="addCategoryBtn" class="add-category-btn">
+            <i class="fas fa-plus"></i> 카테고리 추가
+        </button>
+    </div>
+    
+    <!-- 일기장 부분 -->
+    <div class="diary-container">
+        <div class="diary-header">
+            <h2>오늘의 일기</h2>
+        </div>
+        <div class="diary-toolbar">
+            <button class="toolbar-btn" data-command="bold" title="굵게"><i class="fas fa-bold"></i></button>
+            <button class="toolbar-btn" data-command="italic" title="기울임"><i class="fas fa-italic"></i></button>
+            <button class="toolbar-btn" data-command="underline" title="밑줄"><i class="fas fa-underline"></i></button>
+            <div class="toolbar-divider"></div>
+            <select class="font-select" id="fontSelect">
+                <option value="Arial">Arial</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Georgia">Georgia</option>
+            </select>
+            <select class="font-size" id="fontSize">
+                <option value="1">작게</option>
+                <option value="2">보통</option>
+                <option value="3" selected>중간</option>
+                <option value="4">크게</option>
+                <option value="5">더 크게</option>
+            </select>
+            <div class="toolbar-divider"></div>
+            <!-- 텍스트 색상 선택 버튼 추가 -->
+            <button class="toolbar-btn color-btn" title="텍스트 색상"><i class="fas fa-palette"></i></button>
+            <button class="toolbar-btn" data-command="insertImage" title="이미지 삽입"><i class="fas fa-image"></i></button>
+            <input type="file" id="imageUpload" accept="image/*" style="display: none;" autocomplete="off">
+        </div>
+        <!-- 색상 선택 패널 추가 -->
+        <div class="color-picker" id="colorPicker">
+            <div class="color-options">
+                <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
+                <div class="color-option" style="background-color: #434343;" data-color="#434343"></div>
+                <div class="color-option" style="background-color: #666666;" data-color="#666666"></div>
+                <div class="color-option" style="background-color: #999999;" data-color="#999999"></div>
+                <div class="color-option" style="background-color: #b7b7b7;" data-color="#b7b7b7"></div>
+                <div class="color-option" style="background-color: #cccccc;" data-color="#cccccc"></div>
+                <div class="color-option" style="background-color: #d9d9d9;" data-color="#d9d9d9"></div>
+                <div class="color-option" style="background-color: #efefef;" data-color="#efefef"></div>
+                <div class="color-option" style="background-color: #f3f3f3;" data-color="#f3f3f3"></div>
+                <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
+                <div class="color-option" style="background-color: #980000;" data-color="#980000"></div>
+                <div class="color-option" style="background-color: #ff0000;" data-color="#ff0000"></div>
+                <div class="color-option" style="background-color: #ff9900;" data-color="#ff9900"></div>
+                <div class="color-option" style="background-color: #ffff00;" data-color="#ffff00"></div>
+                <div class="color-option" style="background-color: #00ff00;" data-color="#00ff00"></div>
+                <div class="color-option" style="background-color: #00ffff;" data-color="#00ffff"></div>
+                <div class="color-option" style="background-color: #4a86e8;" data-color="#4a86e8"></div>
+                <div class="color-option" style="background-color: #0000ff;" data-color="#0000ff"></div>
+                <div class="color-option" style="background-color: #9900ff;" data-color="#9900ff"></div>
+                <div class="color-option" style="background-color: #ff00ff;" data-color="#ff00ff"></div>
+                <div class="color-option" style="background-color: #e6b8af;" data-color="#e6b8af"></div>
+                <div class="color-option" style="background-color: #f4cccc;" data-color="#f4cccc"></div>
+                <div class="color-option" style="background-color: #fce5cd;" data-color="#fce5cd"></div>
+                <div class="color-option" style="background-color: #fff2cc;" data-color="#fff2cc"></div>
+                <div class="color-option" style="background-color: #d9ead3;" data-color="#d9ead3"></div>
+                <div class="color-option" style="background-color: #d0e0e3;" data-color="#d0e0e3"></div>
+                <div class="color-option" style="background-color: #c9daf8;" data-color="#c9daf8"></div>
+                <div class="color-option" style="background-color: #cfe2f3;" data-color="#cfe2f3"></div>
+                <div class="color-option" style="background-color: #d9d2e9;" data-color="#d9d2e9"></div>
+                <div class="color-option" style="background-color: #ead1dc;" data-color="#ead1dc"></div>
+                <div class="color-option" style="background-color: #dd7e6b;" data-color="#dd7e6b"></div>
+                <div class="color-option" style="background-color: #ea9999;" data-color="#ea9999"></div>
+                <div class="color-option" style="background-color: #f9cb9c;" data-color="#f9cb9c"></div>
+                <div class="color-option" style="background-color: #ffe599;" data-color="#ffe599"></div>
+                <div class="color-option" style="background-color: #b6d7a8;" data-color="#b6d7a8"></div>
+                <div class="color-option" style="background-color: #a2c4c9;" data-color="#a2c4c9"></div>
+            </div>
+        </div>
+        <div class="diary-content">
+            <div id="diaryEditor" contenteditable="true" placeholder="오늘 하루를 기록해보세요..."></div>
+        </div>
+        <div class="diary-footer">
+            <button id="saveDiary" class="save-diary-btn">저장</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/calendar_01.js') }}"></script>
+<script src="{{ url_for('static', filename='js/calendar_02.js') }}"></script>
+<script src="{{ url_for('static', filename='js/calendar_03.js') }}"></script>
+
+<!-- 일기장 JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const diaryEditor = document.getElementById('diaryEditor');
+        const saveDiaryBtn = document.getElementById('saveDiary');
+        const toolbarButtons = document.querySelectorAll('.toolbar-btn:not(.color-btn)');
+        const colorBtn = document.querySelector('.color-btn');
+        const colorPicker = document.getElementById('colorPicker');
+        const colorOptions = document.querySelectorAll('.color-option');
+        const fontSelect = document.getElementById('fontSelect');
+        const fontSize = document.getElementById('fontSize');
+        const imageUpload = document.getElementById('imageUpload');
+        
+        // 기본 포커스 설정
+        diaryEditor.focus();
+        
+        // 서식 툴바 버튼 이벤트
+        toolbarButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const command = this.dataset.command;
                 
-                // 파일 입력 초기화
-                this.value = '';
-            });
-            
-            // 외부 클릭 시 색상 선택기 닫기
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.color-btn') && !e.target.closest('.color-picker')) {
-                    colorPicker.style.display = 'none';
-                }
-            });
-            
-            // 저장된 일기 불러오기
-            function loadDiary(date) {
-                const savedDiary = localStorage.getItem('diary_' + date);
-                if (savedDiary) {
-                    diaryEditor.innerHTML = savedDiary;
+                if (command === 'insertImage') {
+                    imageUpload.click();
                 } else {
-                    diaryEditor.innerHTML = '';
+                    document.execCommand(command, false, null);
                 }
-            }
-            
-            // 날짜 변경 시 일기 불러오기
-            document.addEventListener('dateChanged', function(e) {
-                loadDiary(e.detail.date);
-            });
-            
-            // 초기 일기 로드
-            loadDiary(window.todoApp?.formatSelectedDate() || new Date().toISOString().split('T')[0]);
-            
-            // 일기 저장 버튼 클릭
-            saveDiaryBtn.addEventListener('click', function() {
-                const date = window.todoApp?.formatSelectedDate() || new Date().toISOString().split('T')[0];
-                localStorage.setItem('diary_' + date, diaryEditor.innerHTML);
                 
-                // 저장 확인 메시지 표시
-                const saveMsg = document.createElement('div');
-                saveMsg.className = 'save-message';
-                saveMsg.textContent = '저장되었습니다!';
-                
-                const diaryFooter = document.querySelector('.diary-footer');
-                diaryFooter.appendChild(saveMsg);
-                
-                // 2초 후 메시지 제거
-                setTimeout(() => {
-                    saveMsg.remove();
-                }, 2000);
-            });
-            
-            // placeholder 기능 구현
-            diaryEditor.addEventListener('focus', function() {
-                if (this.innerHTML === '') {
-                    this.innerHTML = '';
-                }
-            });
-            
-            diaryEditor.addEventListener('blur', function() {
-                if (this.innerHTML === '') {
-                    this.innerHTML = '';
-                }
+                diaryEditor.focus();
             });
         });
-    </script>
-</body>
-</html>
+        
+        // 색상 선택 버튼 클릭 이벤트
+        colorBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            colorPicker.style.display = colorPicker.style.display === 'none' || colorPicker.style.display === '' ? 'block' : 'none';
+        });
+        
+        // 색상 선택 이벤트
+        colorOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const color = this.dataset.color;
+                document.execCommand('foreColor', false, color);
+                colorPicker.style.display = 'none';
+                diaryEditor.focus();
+            });
+        });
+        
+        // 폰트 선택 이벤트
+        fontSelect.addEventListener('change', function() {
+            document.execCommand('fontName', false, this.value);
+            diaryEditor.focus();
+        });
+        
+        // 폰트 크기 이벤트
+        fontSize.addEventListener('change', function() {
+            document.execCommand('fontSize', false, this.value);
+            diaryEditor.focus();
+        });
+        
+        // 이미지 업로드 이벤트 - 이동 기능 제거
+        imageUpload.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'diary-image';
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    
+                    // 이미지를 에디터 끝에 추가
+                    diaryEditor.appendChild(img);
+                };
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+            
+            // 파일 입력 초기화
+            this.value = '';
+        });
+        
+        // 외부 클릭 시 색상 선택기 닫기
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.color-btn') && !e.target.closest('.color-picker')) {
+                colorPicker.style.display = 'none';
+            }
+        });
+        
+        // 저장된 일기 불러오기
+        function loadDiary(date) {
+            const savedDiary = localStorage.getItem('diary_' + date);
+            if (savedDiary) {
+                diaryEditor.innerHTML = savedDiary;
+            } else {
+                diaryEditor.innerHTML = '';
+            }
+        }
+        
+        // 날짜 변경 시 일기 불러오기
+        document.addEventListener('dateChanged', function(e) {
+            loadDiary(e.detail.date);
+        });
+        
+        // 초기 일기 로드
+        loadDiary(window.todoApp?.formatSelectedDate() || new Date().toISOString().split('T')[0]);
+        
+        // 일기 저장 버튼 클릭
+        saveDiaryBtn.addEventListener('click', function() {
+            const date = window.todoApp?.formatSelectedDate() || new Date().toISOString().split('T')[0];
+            localStorage.setItem('diary_' + date, diaryEditor.innerHTML);
+            
+            // 저장 확인 메시지 표시
+            const saveMsg = document.createElement('div');
+            saveMsg.className = 'save-message';
+            saveMsg.textContent = '저장되었습니다!';
+            
+            const diaryFooter = document.querySelector('.diary-footer');
+            diaryFooter.appendChild(saveMsg);
+            
+            // 2초 후 메시지 제거
+            setTimeout(() => {
+                saveMsg.remove();
+            }, 2000);
+        });
+        
+        // placeholder 기능 구현
+        diaryEditor.addEventListener('focus', function() {
+            if (this.innerHTML === '') {
+                this.innerHTML = '';
+            }
+        });
+        
+        diaryEditor.addEventListener('blur', function() {
+            if (this.innerHTML === '') {
+                this.innerHTML = '';
+            }
+        });
+    });
+</script>
+{% endblock %}

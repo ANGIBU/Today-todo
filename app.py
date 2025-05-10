@@ -10,7 +10,8 @@ from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'todo_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://livon:dks12345@192.168.123.105/today_todo'
+# MySQL에 연결하지 못하므로 SQLite 사용으로 변경
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # DB 초기화
@@ -43,7 +44,7 @@ def main():
     user = None
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
-    return render_template('public/main.html', user=user)
+    return render_template('public/main.html', user=user, active_page='main')
 
 # 둘러보기 페이지 (커뮤니티 페이지)
 @app.route('/explore')
@@ -51,7 +52,7 @@ def explore():
     user = None
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
-    return render_template('public/explore.html', user=user)
+    return render_template('public/explore.html', user=user, active_page='explore')
 
 # 알림 페이지
 @app.route('/notifications')
@@ -65,14 +66,14 @@ def notifications():
 @login_required
 def mypage():
     user = User.query.get(session['user_id'])
-    return render_template('public/mypage.html', user=user)
+    return render_template('public/mypage.html', user=user, active_page='mypage')
 
 # 설정 페이지
 @app.route('/settings')
 @login_required
 def settings():
     user = User.query.get(session['user_id'])
-    return render_template('public/settings.html', user=user)
+    return render_template('public/settings.html', user=user, active_page='mypage')
 
 # 로그인 페이지
 @app.route('/login', methods=['GET', 'POST'])
