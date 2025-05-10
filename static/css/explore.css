@@ -42,13 +42,13 @@ section h2 {
     border-bottom: 1px solid var(--border-color);
 }
 
-/* 팔로우 중인 사용자 섹션 */
+/* 팔로우 중인 사용자 섹션 - 스크롤 제거 */
 .users-scroll {
     padding: 15px;
-    overflow-x: auto;
-    white-space: nowrap;
     display: flex;
     gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .user-card {
@@ -154,8 +154,9 @@ section h2 {
 /* 추천 사용자 섹션 */
 .users-grid {
     padding: 15px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
     gap: 15px;
 }
 
@@ -165,6 +166,7 @@ section h2 {
     padding: 12px;
     text-align: center;
     border: 1px solid #eee;
+    width: 140px;
 }
 
 .recommended-user-avatar {
@@ -217,18 +219,30 @@ section h2 {
     margin-right: 10px;
 }
 
-/* 빈 상태 메시지 */
+/* 빈 상태 메시지 - 수정된 부분 */
 .empty-state {
-    text-align: center;
-    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 150px;
+    padding: 20px;
     color: #888;
+    width: 100%;
+    text-align: center;
 }
 
+/* 빈 상태 아이콘 */
 .empty-state i {
-    font-size: 30px;
-    margin-bottom: 10px;
+    font-size: 32px;
+    margin-bottom: 15px;
+    color: #aaa;
 }
 
+/* 빈 상태 텍스트 */
 .empty-state p {
     font-size: 14px;
+    text-align: center;
+    margin: 0 auto;
+    line-height: 1.5;
 }
