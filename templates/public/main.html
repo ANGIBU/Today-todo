@@ -133,9 +133,13 @@
 <body>
     <div class="container">
         <header>
-            <button class="notification-btn"><i class="fas fa-bell"></i></button>
+            <a href="{{ url_for('notifications') }}" class="notification-btn"><i class="fas fa-bell"></i></a>
             <h1>오늘의 Todo</h1>
-            <a href="/auth" class="login-btn">로그인</a>
+            {% if user %}
+                <a href="{{ url_for('mypage') }}" class="login-btn">{{ user.nickname }}</a>
+            {% else %}
+                <a href="{{ url_for('auth') }}" class="login-btn">로그인</a>
+            {% endif %}
         </header>
         
         <main>
@@ -265,17 +269,21 @@
         
         <footer>
             <div class="bottom-nav">
-                <a href="/" class="nav-item active">
-                    <i class="fas fa-list-ul"></i>
-                    <span>To Do</span>
+                <a href="{{ url_for('main') }}" class="nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>홈</span>
                 </a>
-                <a href="/explore" class="nav-item">
-                    <i class="fas fa-users"></i>
-                    <span>커뮤니티</span>
+                <a href="{{ url_for('explore') }}" class="nav-item">
+                    <i class="fas fa-compass"></i>
+                    <span>둘러보기</span>
                 </a>
-                <a href="/mypage" class="nav-item">
+                <a href="{{ url_for('notifications') }}" class="nav-item">
+                    <i class="fas fa-bell"></i>
+                    <span>알림</span>
+                </a>
+                <a href="{{ url_for('mypage') }}" class="nav-item">
                     <i class="fas fa-user"></i>
-                    <span>내정보</span>
+                    <span>My</span>
                 </a>
             </div>
         </footer>
@@ -286,7 +294,7 @@
     <script src="{{ url_for('static', filename='js/calendar_02.js') }}"></script>
     <script src="{{ url_for('static', filename='js/calendar_03.js') }}"></script>
     
-    <!-- 일기장 JavaScript (수정) -->
+    <!-- 일기장 JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const diaryEditor = document.getElementById('diaryEditor');

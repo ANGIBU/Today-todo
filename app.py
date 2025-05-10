@@ -1,4 +1,4 @@
-# Today_ToDo/app.py
+# app.py
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 from datetime import datetime
 import os
@@ -10,11 +10,21 @@ from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'todo_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://livon:dks12345@192.168.123.105/today_todo'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # DB 초기화
 db.init_app(app)
+
+# 로그인 필요 데코레이터
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('로그인이 필요한 서비스입니다.')
+            return redirect(url_for('auth'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # 데이터베이스 초기화
 with app.app_context():
@@ -26,32 +36,47 @@ with app.app_context():
         default_user.set_password('password123')
         db.session.add(default_user)
         db.session.commit()
-    
-    # 기본 카테고리는 모두 삭제함
 
-# 라우트 정의
+# 메인 페이지
 @app.route('/')
 def main():
-    return render_template('public/main.html')
+    user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+    return render_template('public/main.html', user=user)
 
 # 둘러보기 페이지 (커뮤니티 페이지)
 @app.route('/explore')
 def explore():
-    return render_template('public/explore.html')
+    user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+    return render_template('public/explore.html', user=user)
 
 # 알림 페이지
 @app.route('/notifications')
+@login_required
 def notifications():
-    return render_template('public/notifications.html')
+    user = User.query.get(session['user_id'])
+    return render_template('public/notifications.html', user=user)
 
 # 마이페이지
 @app.route('/mypage')
+@login_required
 def mypage():
-    return render_template('public/mypage.html')
+    user = User.query.get(session['user_id'])
+    return render_template('public/mypage.html', user=user)
 
-# 인증 관련 라우트
-@app.route('/auth', methods=['GET', 'POST'])
-def auth():
+# 설정 페이지
+@app.route('/settings')
+@login_required
+def settings():
+    user = User.query.get(session['user_id'])
+    return render_template('public/settings.html', user=user)
+
+# 로그인 페이지
+@app.route('/login', methods=['GET', 'POST'])
+def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -67,6 +92,12 @@ def auth():
     
     return render_template('public/auth.html', action='login')
 
+# 인증 라우트 - 로그인/가입 선택 페이지
+@app.route('/auth')
+def auth():
+    return render_template('public/auth.html', action='login')
+
+# 회원가입 페이지
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -94,6 +125,7 @@ def register():
     
     return render_template('public/auth.html', action='register')
 
+# 로그아웃
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
@@ -101,7 +133,7 @@ def logout():
     session.pop('nickname', None)
     return redirect(url_for('main'))
 
-# API 엔드포인트
+# 할일 API 엔드포인트
 @app.route('/api/todos', methods=['GET'])
 def get_todos():
     user_id = session.get('user_id', 1)
@@ -234,6 +266,7 @@ def delete_todo(todo_id):
     db.session.commit()
     return jsonify({'result': 'success'})
 
+# 카테고리 API 엔드포인트
 @app.route('/api/topics', methods=['GET'])
 def get_topics():
     user_id = session.get('user_id', 1)
@@ -300,5 +333,223 @@ def delete_topic(topic_id):
     db.session.commit()
     return jsonify({'result': 'success'})
 
+# 사용자 프로필 API 엔드포인트
+@app.route('/api/user/profile', methods=['GET'])
+def get_user_profile():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    user = User.query.get_or_404(user_id)
+    
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'nickname': user.nickname,
+        'bio': user.bio,
+        'profile_image': user.profile_image,
+        'created_at': user.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        'followers_count': user.followers.count(),
+        'following_count': user.followed.count()
+    })
+
+@app.route('/api/user/profile', methods=['PUT'])
+def update_user_profile():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    user = User.query.get_or_404(user_id)
+    data = request.json
+    
+    if 'nickname' in data:
+        user.nickname = data['nickname']
+    if 'bio' in data:
+        user.bio = data['bio']
+    
+    db.session.commit()
+    
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'nickname': user.nickname,
+        'bio': user.bio,
+        'profile_image': user.profile_image
+    })
+
+# 팔로우 API 엔드포인트
+@app.route('/api/users/<int:user_id>/follow', methods=['POST'])
+@login_required
+def follow_user(user_id):
+    current_user_id = session.get('user_id')
+    if current_user_id == user_id:
+        return jsonify({'error': '자신을 팔로우할 수 없습니다.'}), 400
+    
+    current_user = User.query.get_or_404(current_user_id)
+    user_to_follow = User.query.get_or_404(user_id)
+    
+    current_user.follow(user_to_follow)
+    db.session.commit()
+    
+    # 알림 생성
+    notification = Notification(
+        message=f"{current_user.nickname}님이 회원님을 팔로우하기 시작했습니다.",
+        type='follow',
+        user_id=user_id,
+        sender_id=current_user_id
+    )
+    db.session.add(notification)
+    db.session.commit()
+    
+    return jsonify({'result': 'success'})
+
+@app.route('/api/users/<int:user_id>/unfollow', methods=['POST'])
+@login_required
+def unfollow_user(user_id):
+    current_user_id = session.get('user_id')
+    current_user = User.query.get_or_404(current_user_id)
+    user_to_unfollow = User.query.get_or_404(user_id)
+    
+    current_user.unfollow(user_to_unfollow)
+    db.session.commit()
+    
+    return jsonify({'result': 'success'})
+
+# 커뮤니티 API 엔드포인트
+@app.route('/api/explore/users', methods=['GET'])
+def get_explore_users():
+    current_user_id = session.get('user_id')
+    if not current_user_id:
+        return jsonify({'following': [], 'recommended': []}), 200
+    
+    current_user = User.query.get_or_404(current_user_id)
+    
+    # 팔로우 중인 사용자
+    following_users = current_user.followed.all()
+    following_result = []
+    for user in following_users:
+        following_result.append({
+            'id': user.id,
+            'username': user.username,
+            'nickname': user.nickname,
+            'profile_image': user.profile_image
+        })
+    
+    # 추천 사용자 (자신과 이미 팔로우한 사용자 제외)
+    following_ids = [user.id for user in following_users]
+    following_ids.append(current_user_id)
+    recommended_users = User.query.filter(~User.id.in_(following_ids)).limit(10).all()
+    
+    recommended_result = []
+    for user in recommended_users:
+        recommended_result.append({
+            'id': user.id,
+            'username': user.username,
+            'nickname': user.nickname,
+            'profile_image': user.profile_image,
+            'is_following': False
+        })
+    
+    return jsonify({
+        'following': following_result,
+        'recommended': recommended_result
+    })
+
+@app.route('/api/explore/todos', methods=['GET'])
+def get_explore_todos():
+    current_user_id = session.get('user_id')
+    if not current_user_id:
+        return jsonify([]), 200
+    
+    current_user = User.query.get_or_404(current_user_id)
+    
+    # 팔로우 중인 사용자의 공개 할 일
+    followed_todos = current_user.followed_todos().all()
+    
+    result = []
+    for todo in followed_todos:
+        user = User.query.get(todo.user_id)
+        category = None
+        category_color = None
+        
+        if todo.category_id:
+            category_obj = Category.query.get(todo.category_id)
+            if category_obj:
+                category = category_obj.name
+                category_color = category_obj.color
+        
+        result.append({
+            'id': todo.id,
+            'title': todo.title,
+            'description': todo.description,
+            'date': todo.date.strftime('%Y-%m-%d'),
+            'completed': todo.completed,
+            'category': category,
+            'category_color': category_color,
+            'created_at': todo.created_at.strftime('%Y-%m-%d %H:%M'),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'nickname': user.nickname,
+                'profile_image': user.profile_image
+            }
+        })
+    
+    return jsonify(result)
+
+# 알림 API 엔드포인트
+@app.route('/api/notifications', methods=['GET'])
+@login_required
+def get_notifications():
+    user_id = session.get('user_id')
+    notifications = Notification.query.filter_by(user_id=user_id).order_by(Notification.created_at.desc()).all()
+    
+    result = []
+    for notification in notifications:
+        sender = None
+        if notification.sender_id:
+            sender_user = User.query.get(notification.sender_id)
+            if sender_user:
+                sender = {
+                    'id': sender_user.id,
+                    'username': sender_user.username,
+                    'nickname': sender_user.nickname,
+                    'profile_image': sender_user.profile_image
+                }
+        
+        result.append({
+            'id': notification.id,
+            'message': notification.message,
+            'type': notification.type,
+            'read': notification.read,
+            'created_at': notification.created_at.strftime('%Y-%m-%d %H:%M'),
+            'sender': sender
+        })
+    
+    return jsonify(result)
+
+@app.route('/api/notifications/read', methods=['POST'])
+@login_required
+def mark_notifications_read():
+    data = request.json
+    notification_ids = data.get('notification_ids', [])
+    
+    for notification_id in notification_ids:
+        notification = Notification.query.get(notification_id)
+        if notification and notification.user_id == session.get('user_id'):
+            notification.read = True
+    
+    db.session.commit()
+    return jsonify({'result': 'success'})
+
+@app.route('/api/notifications/clear', methods=['POST'])
+@login_required
+def clear_notifications():
+    user_id = session.get('user_id')
+    Notification.query.filter_by(user_id=user_id).delete()
+    db.session.commit()
+    return jsonify({'result': 'success'})
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5005, debug=False)
+    app.run(host='0.0.0.0', port=5005, debug=True)
