@@ -59,13 +59,6 @@ def explore():
         user = User.query.get(session['user_id'])
     return render_template('public/explore.html', user=user, active_page='explore')
 
-# 알림 페이지
-@app.route('/notifications')
-@login_required
-def notifications():
-    user = User.query.get(session['user_id'])
-    return render_template('public/notifications.html', user=user)
-
 # 마이페이지
 @app.route('/mypage')
 @login_required
@@ -137,6 +130,7 @@ def logout():
     session.pop('user_id', None)
     session.pop('username', None)
     session.pop('nickname', None)
+    flash('로그아웃되었습니다.')
     return redirect(url_for('todo'))
 
 # 할일 API 엔드포인트

@@ -7,19 +7,46 @@
     <title>{% block title %}투데이 투두{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main_01.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
     {% block css %}{% endblock %}
 </head>
 <body>
     <div class="container">
         <header>
-            <a href="{{ url_for('notifications') }}" class="notification-btn"><i class="fas fa-bell"></i></a>
+            <button class="notification-btn" id="notificationBtn"><i class="fas fa-bell"></i></button>
             <h1>{% block header_title %}투데이 투두{% endblock %}</h1>
             {% if user %}
-                <a href="{{ url_for('mypage') }}" class="login-btn">{{ user.nickname }}</a>
+                <a href="{{ url_for('logout') }}" class="login-btn" id="logoutBtn">로그아웃</a>
             {% else %}
                 <a href="{{ url_for('auth') }}" class="login-btn">로그인</a>
             {% endif %}
         </header>
+        
+        <!-- 알림 사이드바 -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="notifications-sidebar" id="notificationsSidebar">
+            <div class="notifications-header">
+                <h2>나의 알림</h2>
+                <button class="close-btn" id="closeSidebarBtn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="notifications-content">
+                <div class="header-actions">
+                    <button id="clearAllBtn" class="clear-btn">전체 삭제</button>
+                </div>
+                <div id="notificationsList">
+                    <!-- 알림 목록 로딩 중 표시 -->
+                    <div class="loading-indicator">
+                        <i class="fas fa-spinner fa-pulse"></i>
+                        <span>로딩 중...</span>
+                    </div>
+                </div>
+                <!-- 알림이 없을 때 표시할 내용 -->
+                <div class="empty-notifications" id="emptyNotifications" style="display: none;">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>알림이 없습니다</p>
+                </div>
+            </div>
+        </div>
         
         <main>
             {% block content %}{% endblock %}
@@ -43,6 +70,7 @@
         </footer>
     </div>
 
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
