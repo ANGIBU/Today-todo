@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             userElement.innerHTML = `
                 <div class="user-avatar">
-                    <img src="/static/image/${user.profile_image}" alt="${user.nickname}">
+                    <img src="/static/images/${user.profile_image}" alt="${user.nickname}">
                 </div>
                 <div class="user-name">${user.nickname}</div>
             `;
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
             todoElement.innerHTML = `
                 <div class="shared-todo-header">
                     <div class="todo-user-avatar">
-                        <img src="/static/image/${todo.user.profile_image}" alt="${todo.user.nickname}">
+                        <img src="/static/images/${todo.user.profile_image}" alt="${todo.user.nickname}">
                     </div>
                     <div class="todo-user-info">
                         <div class="todo-user-name">${todo.user.nickname}</div>
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             userElement.innerHTML = `
                 <div class="recommended-user-avatar">
-                    <img src="/static/image/${user.profile_image}" alt="${user.nickname}">
+                    <img src="/static/images/${user.profile_image}" alt="${user.nickname}">
                 </div>
                 <div class="recommended-user-name">${user.nickname}</div>
                 <button class="follow-btn" data-user-id="${user.id}">
