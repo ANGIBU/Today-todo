@@ -12,10 +12,11 @@
 <body>
     <div class="container">
         <header>
-            <h1>설정</h1>
             <a href="{{ url_for('mypage') }}" class="back-btn">
                 <i class="fas fa-arrow-left"></i>
             </a>
+            <h1>설정</h1>
+            <a href="{{ url_for('mypage') }}" class="login-btn">{{ user.nickname }}</a>
         </header>
         
         <main>

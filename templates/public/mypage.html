@@ -12,13 +12,9 @@
 <body>
     <div class="container">
         <header>
+            <a href="{{ url_for('notifications') }}" class="notification-btn"><i class="fas fa-bell"></i></a>
             <h1>마이 페이지</h1>
-            <nav class="top-nav">
-                <a href="{{ url_for('main') }}" class="nav-item">홈</a>
-                <a href="{{ url_for('explore') }}" class="nav-item">둘러보기</a>
-                <a href="{{ url_for('notifications') }}" class="nav-item">알림</a>
-                <a href="{{ url_for('mypage') }}" class="nav-item active">My</a>
-            </nav>
+            <a href="{{ url_for('mypage') }}" class="login-btn">{{ user.nickname }}</a>
         </header>
         
         <main>
@@ -27,7 +23,7 @@
                 <section class="profile-section">
                     <div class="profile-header">
                         <div class="profile-image">
-                            <img src="{{ url_for('static', filename='image/' + user.profile_image) }}" alt="프로필 이미지">
+                            <img src="{{ url_for('static', filename='images/' + user.profile_image) }}" alt="프로필 이미지">
                         </div>
                         <div class="profile-info">
                             <h2 class="profile-nickname" id="profileNickname">{{ user.nickname }}</h2>
