@@ -410,3 +410,157 @@
     margin-top: 10px;
     justify-content: center;
 }
+
+/* 모바일 스타일 알림 팝업 */
+.mobile-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.mobile-alert-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mobile-alert {
+    background-color: white;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(20px);
+    transition: transform 0.3s;
+}
+
+.mobile-alert-overlay.show .mobile-alert {
+    transform: translateY(0);
+}
+
+.mobile-alert-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+.mobile-alert-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.mobile-alert-body {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-size: 16px;
+}
+
+.mobile-alert-actions {
+    display: flex;
+    border-top: 1px solid #eee;
+}
+
+.mobile-alert-btn {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 15px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.mobile-alert-btn.cancel {
+    color: #666;
+    border-right: 1px solid #eee;
+}
+
+.mobile-alert-btn.confirm {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.mobile-alert-btn:hover {
+    background-color: #f8f8f8;
+}
+
+/* 텍스트 색상 선택 스타일 - 개선된 부분 */
+.color-picker {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    z-index: 1000;
+    width: 220px;
+    padding: 10px;
+    display: none;
+    margin-top: 5px;
+}
+
+.color-btn {
+    position: relative;
+}
+
+.color-options {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+}
+
+.color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
+
+/* 색상 선택 시 시각적 피드백 */
+.color-option.selected {
+    box-shadow: 0 0 0 2px #666, 0 0 0 4px rgba(102, 102, 102, 0.2);
+}
+
+/* 색상 선택기 타이틀 */
+.color-picker-title {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+}
+
+/* 자동 저장 알림 */
+.auto-save-indicator {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.auto-save-indicator.visible {
+    opacity: 1;
+}
