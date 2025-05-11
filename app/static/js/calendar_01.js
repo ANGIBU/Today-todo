@@ -25,9 +25,20 @@ document.addEventListener('DOMContentLoaded', function() {
     let isEditingTask = false;
     let editingTaskId = null;
     
-    // 할 일 데이터 (실제로는 API에서 가져옴)
+    // 로컬 데이터
     let todos = [];
     let categories = [];
+    
+    // 장치 ID 가져오기 (로컬 스토리지에서)
+    function getDeviceId() {
+        let deviceId = localStorage.getItem('deviceId');
+        if (!deviceId) {
+            // 장치 ID가 없으면 생성하여 저장
+            deviceId = 'device_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('deviceId', deviceId);
+        }
+        return deviceId;
+    }
     
     // 달력 초기화
     function initCalendar() {
@@ -62,10 +73,75 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     
         // 초기 데이터 로드 및 렌더링
-        Promise.all([fetchTodos(), fetchCategories()]).then(() => {
+        loadInitialData();
+    }
+    
+    // 초기 데이터 로드
+    async function loadInitialData() {
+        try {
+            // 카테고리와 할일 데이터 로드
+            await Promise.all([fetchTodos(), fetchCategories()]);
+            
+            // 로그인 상태에 따라 로컬 스토리지 처리
+            const isLoggedIn = document.body.getAttribute('data-logged-in') === 'true';
+            if (!isLoggedIn) {
+                // 로컬 스토리지에서 비로그인 사용자 데이터 로드
+                loadLocalData();
+            }
+            
+            // 달력 및 할일 목록 렌더링
             renderCalendar();
             renderTodosAndCategories(formatDate(selectedDate));
-        });
+            
+            // 데이터 로드 상태 표시
+            console.log('데이터 로드 완료:', { categories: categories.length, todos: todos.length });
+        } catch (error) {
+            console.error('초기 데이터 로드 실패:', error);
+        }
+    }
+    
+    // 비로그인 사용자 데이터 로컬 스토리지에서 로드
+    function loadLocalData() {
+        const deviceId = getDeviceId();
+        
+        // 로컬 스토리지에서 카테고리 데이터 로드
+        const storedCategories = localStorage.getItem(`categories_${deviceId}`);
+        if (storedCategories) {
+            const parsedCategories = JSON.parse(storedCategories);
+            // 중복 방지를 위해 ID 기준으로 병합
+            parsedCategories.forEach(localCat => {
+                if (!categories.some(cat => cat.id === localCat.id)) {
+                    categories.push(localCat);
+                }
+            });
+        }
+        
+        // 로컬 스토리지에서 할일 데이터 로드
+        const storedTodos = localStorage.getItem(`todos_${deviceId}`);
+        if (storedTodos) {
+            const parsedTodos = JSON.parse(storedTodos);
+            // 중복 방지를 위해 ID 기준으로 병합
+            parsedTodos.forEach(localTodo => {
+                if (!todos.some(todo => todo.id === localTodo.id)) {
+                    // 날짜 문자열을 Date 객체로 변환
+                    if (localTodo.date && typeof localTodo.date === 'string') {
+                        localTodo.date = new Date(localTodo.date);
+                    }
+                    todos.push(localTodo);
+                }
+            });
+        }
+    }
+    
+    // 비로그인 사용자 데이터 로컬 스토리지에 저장
+    function saveLocalData() {
+        const deviceId = getDeviceId();
+        
+        // 카테고리 데이터 저장
+        localStorage.setItem(`categories_${deviceId}`, JSON.stringify(categories));
+        
+        // 할일 데이터 저장
+        localStorage.setItem(`todos_${deviceId}`, JSON.stringify(todos));
     }
     
     // 날짜 형식 변환 (YYYY-MM-DD)
@@ -204,7 +280,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 해당 날짜에 할 일이 있는지 확인
     function hasTodo(dateStr) {
-        return todos.some(todo => todo.date === dateStr);
+        return todos.some(todo => 
+            formatDate(new Date(todo.date)) === dateStr || 
+            (todo.pinned === true)
+        );
     }
     
     // 달력 렌더링
@@ -325,7 +404,24 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchTodos() {
         try {
             const response = await fetch('/api/todos');
-            todos = await response.json();
+            if (!response.ok) throw new Error('Todo 데이터 로드 실패');
+            
+            const result = await response.json();
+            
+            // 날짜 문자열을 Date 객체로 변환
+            todos = result.map(todo => {
+                if (todo.date && typeof todo.date === 'string') {
+                    return { ...todo, date: new Date(todo.date) };
+                }
+                return todo;
+            });
+            
+            // 비로그인 사용자인 경우 로컬 저장
+            const isLoggedIn = document.body.getAttribute('data-logged-in') === 'true';
+            if (!isLoggedIn) {
+                saveLocalData();
+            }
+            
             return todos;
         } catch (error) {
             console.error('할 일을 가져오는 중 오류 발생:', error);
@@ -337,7 +433,16 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchCategories() {
         try {
             const response = await fetch('/api/topics');
+            if (!response.ok) throw new Error('Category 데이터 로드 실패');
+            
             categories = await response.json();
+            
+            // 비로그인 사용자인 경우 로컬 저장
+            const isLoggedIn = document.body.getAttribute('data-logged-in') === 'true';
+            if (!isLoggedIn) {
+                saveLocalData();
+            }
+            
             return categories;
         } catch (error) {
             console.error('카테고리를 가져오는 중 오류 발생:', error);
@@ -366,8 +471,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 ${todo.description ? `<div class="task-description">${todo.description}</div>` : ''}
             </div>
             <div class="task-actions">
-                <button class="edit-task" data-id="${todo.id}"><i class="fas fa-edit"></i></button>
-                <button class="delete-task" data-id="${todo.id}"><i class="fas fa-trash"></i></button>
+                <button class="pin-task" data-id="${todo.id}">
+                    <i class="fas ${todo.pinned ? 'fa-thumbtack active' : 'fa-thumbtack'}"></i>
+                </button>
+                <button class="edit-task" data-id="${todo.id}">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-task" data-id="${todo.id}">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         `;
         
@@ -382,119 +494,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 날짜별 할 일 및 카테고리 렌더링
+    // 날짜별 할 일 및 카테고리 렌더링 함수
     function renderTodosAndCategories(dateStr) {
-        // 할 일 목록 초기화
-        tasksList.innerHTML = '';
-        
-        // 해당 날짜의 할 일 필터링
-        const dayTodos = todos.filter(todo => todo.date === dateStr);
-        
-        if (dayTodos.length === 0 && categories.length === 0 && !isAddingCategory) {
-            // 할 일과 카테고리가 모두 없을 경우
-            tasksList.innerHTML = '<div class="empty-list">이 날짜에 등록된 할 일이 없습니다<br>아래 "카테고리 추가" 버튼을 눌러 새 카테고리를 만들어보세요.</div>';
-            return;
-        }
-    
-        // 카테고리별로 할 일 그룹화
-        const todosByCategory = {};
-        const todosWithoutCategory = [];
-        
-        // 모든 카테고리를 먼저 추가
-        categories.forEach(category => {
-            todosByCategory[category.id] = [];
-        });
-        
-        // 할 일을 카테고리별로 분류
-        dayTodos.forEach(todo => {
-            if (todo.category_id) {
-                if (!todosByCategory[todo.category_id]) {
-                    todosByCategory[todo.category_id] = [];
-                }
-                todosByCategory[todo.category_id].push(todo);
-            } else {
-                todosWithoutCategory.push(todo);
-            }
-        });
-        
-        // 카테고리별 할 일 렌더링
-        for (const categoryId in todosByCategory) {
-            const category = categories.find(cat => cat.id === parseInt(categoryId));
-            if (!category) continue;
-            
-            const categoryContainer = document.createElement('div');
-            categoryContainer.classList.add('category-container');
-            categoryContainer.dataset.id = category.id;
-            
-            // 카테고리 색상을 텍스트 색상으로 설정
-            categoryContainer.innerHTML = `
-                <div class="category-header" style="background-color: #f8f8f8;">
-                    <div class="category-name" style="color: ${category.color}">
-                        <i class="fas fa-tag"></i>
-                        ${category.name}
-                    </div>
-                    <div class="category-actions">
-                        <button class="edit-category-btn" data-category="${category.id}">
-                            <i class="fas fa-pencil-alt"></i>
-                        </button>
-                        <button class="add-task-btn" data-category="${category.id}">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                        <button class="delete-category-btn" data-category="${category.id}">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="category-tasks" id="category-${category.id}-tasks">
-                </div>
-            `;
-            
-            tasksList.appendChild(categoryContainer);
-            
-            const categoryTasksContainer = categoryContainer.querySelector(`#category-${category.id}-tasks`);
-            
-            // 카테고리 내 할 일 렌더링
-            if (todosByCategory[categoryId].length === 0) {
-                categoryTasksContainer.innerHTML = '<div class="empty-category-tasks">이 카테고리에 할 일이 없습니다</div>';
-            } else {
-                // 할 일 목록 렌더링
-                todosByCategory[categoryId].forEach(todo => {
-                    renderTodoItem(todo, categoryTasksContainer);
-                });
-            }
-        }
-        
-        // 카테고리 없는 할 일 렌더링
-        if (todosWithoutCategory.length > 0) {
-            const uncategorizedContainer = document.createElement('div');
-            uncategorizedContainer.classList.add('category-container');
-            
-            uncategorizedContainer.innerHTML = `
-                <div class="category-header">
-                    <div class="category-name">
-                        <i class="fas fa-list"></i>
-                        기타 할 일
-                    </div>
-                    <button class="add-task-btn" data-category="">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <div class="category-tasks" id="uncategorized-tasks">
-                </div>
-            `;
-            
-            tasksList.appendChild(uncategorizedContainer);
-            
-            const uncategorizedTasksContainer = uncategorizedContainer.querySelector('#uncategorized-tasks');
-            
-            // 카테고리 없는 할 일 렌더링
-            todosWithoutCategory.forEach(todo => {
-                renderTodoItem(todo, uncategorizedTasksContainer);
-            });
+        // todoApp 객체에 정의된 렌더링 함수 사용
+        if (window.todoApp && window.todoApp.renderTodosAndCategories) {
+            window.todoApp.renderTodosAndCategories(dateStr);
+        } else {
+            console.error('렌더링 함수를 찾을 수 없습니다');
         }
     }
     
-    // 공유 변수 및 함수를 window 객체에 추가
+    // 애플리케이션 상태 공유
     window.todoApp = {
         todos: todos,
         categories: categories,
@@ -513,7 +523,10 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCalendar: renderCalendar,
         renderTodosAndCategories: renderTodosAndCategories,
         fetchTodos: fetchTodos,
-        fetchCategories: fetchCategories
+        fetchCategories: fetchCategories,
+        saveLocalData: saveLocalData,
+        loadLocalData: loadLocalData,
+        getDeviceId: getDeviceId
     };
     
     // 윈도우 크기 변경 시 달력 크기 조정
