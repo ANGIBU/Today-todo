@@ -89,9 +89,8 @@ class Todo(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # 외래 키 - user_id는 로그인한 경우만, anonymous_id는 비로그인 사용자용
+    # 외래 키 - anonymous_id 필드 제거
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    anonymous_id = db.Column(db.String(36), index=True, nullable=True)  # UUID 저장용
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     
     def to_dict(self):
@@ -112,7 +111,7 @@ class Todo(db.Model):
         
     @staticmethod
     def from_dict(data, user_id=None, anonymous_id=None):
-        """딕셔너리에서 할 일 객체 생성 (비로그인 사용자 지원)"""
+        """딕셔너리에서 할 일 객체 생성"""
         date = datetime.strptime(data['date'], '%Y-%m-%d') if isinstance(data['date'], str) else data['date']
         todo = Todo(
             title=data['title'],
@@ -124,11 +123,9 @@ class Todo(db.Model):
             category_id=data.get('category_id')
         )
         
-        # 로그인 상태에 따라 사용자 ID 설정
+        # anonymous_id 관련 로직 제거, user_id만 설정
         if user_id:
             todo.user_id = user_id
-        elif anonymous_id:
-            todo.anonymous_id = anonymous_id
             
         return todo
 
@@ -138,11 +135,10 @@ class Category(db.Model):
     color = db.Column(db.String(20), default='#3498db')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # 외래 키 - user_id는 로그인한 경우만, anonymous_id는 비로그인 사용자용
+    # 외래 키 - anonymous_id 필드 제거
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    anonymous_id = db.Column(db.String(36), index=True, nullable=True)  # UUID 저장용
     
-    # 관계 설정 - user_id 또는 anonymous_id가 동일한 할 일만 포함
+    # 관계 설정
     todos = db.relationship('Todo', backref='category', lazy='dynamic')
     
     def to_dict(self):
@@ -156,17 +152,15 @@ class Category(db.Model):
     
     @staticmethod
     def from_dict(data, user_id=None, anonymous_id=None):
-        """딕셔너리에서 카테고리 객체 생성 (비로그인 사용자 지원)"""
+        """딕셔너리에서 카테고리 객체 생성"""
         category = Category(
             name=data['name'],
             color=data.get('color', '#3498db')
         )
         
-        # 로그인 상태에 따라 사용자 ID 설정
+        # anonymous_id 관련 로직 제거, user_id만 설정
         if user_id:
             category.user_id = user_id
-        elif anonymous_id:
-            category.anonymous_id = anonymous_id
             
         return category
 
