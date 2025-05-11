@@ -1,4 +1,4 @@
-// static/js/auth.js
+// app/static/js/auth.js
 document.addEventListener('DOMContentLoaded', function() {
     // 폼 유효성 검사 기능
     const authForms = document.querySelectorAll('.auth-form form');

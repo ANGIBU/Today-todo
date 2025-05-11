@@ -1,4 +1,4 @@
-<!-- templates/public/mypage.html -->
+<!-- app/templates/public/mypage.html -->
 {% extends "layout.html" %}
 
 {% block title %}마이페이지 - 투데이 투두{% endblock %}
@@ -42,14 +42,14 @@
     
     <!-- 설정 버튼 -->
     <section class="profile-actions">
-        <a href="{{ url_for('settings') }}" class="settings-btn">
+        <a href="{{ url_for('main.settings') }}" class="settings-btn">
             <i class="fas fa-cog"></i> 설정
         </a>
     </section>
     
     <!-- 로그아웃 버튼 -->
     <section class="logout-section">
-        <a href="{{ url_for('logout') }}" class="logout-btn">
+        <a href="{{ url_for('auth.logout') }}" class="logout-btn">
             <i class="fas fa-sign-out-alt"></i> 로그아웃
         </a>
     </section>

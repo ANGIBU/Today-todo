@@ -1,4 +1,4 @@
-<!-- templates/layout.html -->
+<!-- app/templates/layout.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -16,9 +16,9 @@
             <button class="notification-btn" id="notificationBtn"><i class="fas fa-bell"></i></button>
             <h1>{% block header_title %}투데이 투두{% endblock %}</h1>
             {% if user %}
-                <a href="{{ url_for('logout') }}" class="login-btn" id="logoutBtn">로그아웃</a>
+                <a href="{{ url_for('auth.logout') }}" class="login-btn" id="logoutBtn">로그아웃</a>
             {% else %}
-                <a href="{{ url_for('auth') }}" class="login-btn">로그인</a>
+                <a href="{{ url_for('auth.auth_page') }}" class="login-btn">로그인</a>
             {% endif %}
         </header>
         
@@ -54,15 +54,15 @@
         
         <footer>
             <div class="bottom-nav">
-                <a href="{{ url_for('todo') }}" class="nav-item {% if active_page == 'main' %}active{% endif %}">
+                <a href="{{ url_for('main.todo') }}" class="nav-item {% if active_page == 'main' %}active{% endif %}">
                     <i class="fas fa-list-ul"></i>
                     <span>To Do</span>
                 </a>
-                <a href="{{ url_for('explore') }}" class="nav-item {% if active_page == 'explore' %}active{% endif %}">
+                <a href="{{ url_for('social.explore') }}" class="nav-item {% if active_page == 'explore' %}active{% endif %}">
                     <i class="fas fa-compass"></i>
                     <span>둘러보기</span>
                 </a>
-                <a href="{{ url_for('mypage') }}" class="nav-item {% if active_page == 'mypage' %}active{% endif %}">
+                <a href="{{ url_for('main.mypage') }}" class="nav-item {% if active_page == 'mypage' %}active{% endif %}">
                     <i class="fas fa-user"></i>
                     <span>내 정보</span>
                 </a>

@@ -9,7 +9,7 @@ class Config:
     TESTING = False
     
     # 데이터베이스 설정
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://livon:dks12345@192.168.123.105/todo_db'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://livon:dks12345@192.168.123.105/today_todo'  # todo_db에서 today_todo로 변경
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # 세션 설정

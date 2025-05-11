@@ -1,4 +1,4 @@
-// static/js/notifications.js
+// app/static/js/notifications.js
 document.addEventListener('DOMContentLoaded', function() {
     const notificationBtn = document.getElementById('notificationBtn');
     const closeSidebarBtn = document.getElementById('closeSidebarBtn');

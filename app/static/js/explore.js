@@ -1,4 +1,4 @@
-// static/js/explore.js
+// app/static/js/explore.js
 document.addEventListener('DOMContentLoaded', function() {
     const followingUsersContainer = document.getElementById('followingUsers');
     const sharedTodosContainer = document.getElementById('sharedTodos');

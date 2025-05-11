@@ -1,4 +1,4 @@
-// static/js/settings.js
+// app/static/js/settings.js
 document.addEventListener('DOMContentLoaded', function() {
     const profileForm = document.getElementById('profileForm');
     const nicknameInput = document.getElementById('nickname');
@@ -35,8 +35,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!response.ok) {
                     throw new Error('프로필 업데이트 실패');
                 }
-                
-                const data = await response.json();
                 
                 // 성공 메시지 표시
                 showSuccessMessage('프로필이 성공적으로 업데이트되었습니다.');

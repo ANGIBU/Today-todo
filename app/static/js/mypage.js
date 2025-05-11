@@ -1,4 +1,4 @@
-// static/js/mypage.js
+// app/static/js/mypage.js
 document.addEventListener('DOMContentLoaded', function() {
     const profileNickname = document.getElementById('profileNickname');
     const profileBio = document.getElementById('profileBio');
