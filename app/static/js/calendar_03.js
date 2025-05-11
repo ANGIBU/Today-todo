@@ -291,6 +291,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 달력 업데이트
             window.todoApp.renderCalendar();
+
+            // 전체 할 일 목록 다시 렌더링 - 고정된 항목을 모든 날짜에 표시하기 위해
+            window.todoApp.renderTodosAndCategories(window.todoApp.formatSelectedDate());
             
         } catch (error) {
             console.error('할 일 수정 중 오류 발생:', error);
@@ -339,6 +342,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 달력 업데이트
             window.todoApp.renderCalendar();
+
+            // 전체 할 일 목록 다시 불러오기
+            await window.todoApp.fetchTodos();
+            
+            // 할 일 목록 다시 렌더링 - 고정된 항목을 모든 날짜에 표시하기 위해
+            window.todoApp.renderTodosAndCategories(window.todoApp.formatSelectedDate());
             
         } catch (error) {
             console.error('할 일 핀 상태 변경 중 오류 발생:', error);
@@ -465,9 +474,17 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', function() {
             toggleTodoComplete(todo.id, this.checked);
         });
+
+        // 핀 버튼 이벤트 등록 - 직접 이벤트 추가
+        const pinBtn = taskItem.querySelector('.pin-task');
+        if (pinBtn) {
+            pinBtn.addEventListener('click', function() {
+                toggleTodoPin(todo.id);
+            });
+        }
     }
     
-    // 날짜별 할 일 및 카테고리 렌더링
+    // 날짜별 할 일 및 카테고리 렌더링 - 수정됨
     function renderTodosAndCategories(dateStr) {
         // 인라인 폼 상태 저장
         const wasAddingCategory = window.todoApp.isAddingCategory;
@@ -484,7 +501,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 해당 날짜의 할 일 필터링 (핀 된 항목 포함)
         const dayTodos = window.todoApp.todos.filter(todo => 
-            todo.date === dateStr || todo.pinned
+            todo.date === dateStr || todo.pinned === true
         );
         
         if (dayTodos.length === 0 && window.todoApp.categories.length === 0 && !wasAddingCategory) {
@@ -626,6 +643,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('toggleTodo', function(e) {
         toggleTodoComplete(e.detail.todoId, e.detail.completed);
     });
+
+    // 날짜 변경 이벤트 리스너 추가 - 달력 날짜 클릭 시 할 일 목록 새로고침
+    document.addEventListener('dateChanged', function(e) {
+        const dateStr = e.detail.date;
+        
+        // 일기장 데이터 로드 (diary.js에서 처리)
+        
+        // 할 일 목록 다시 렌더링
+        window.todoApp.renderTodosAndCategories(dateStr);
+    });
     
     // 전역 스코프에 함수 노출 (calendar_02.js에서 사용할 수 있도록)
     window.addTodo = addTodo;
@@ -641,4 +668,18 @@ document.addEventListener('DOMContentLoaded', function() {
     window.todoApp.deleteTodo = deleteTodo;
     window.todoApp.toggleTodoComplete = toggleTodoComplete;
     window.todoApp.renderTodosAndCategories = renderTodosAndCategories;
+
+    // 페이지 로드 시 할 일 목록 및 카테고리 다시 로드
+    setTimeout(async function() {
+        try {
+            await window.todoApp.fetchTodos();
+            await window.todoApp.fetchCategories();
+            
+            // 선택된 날짜의 할 일 목록 렌더링
+            const dateStr = window.todoApp.formatSelectedDate();
+            window.todoApp.renderTodosAndCategories(dateStr);
+        } catch (error) {
+            console.error('데이터 로드 중 오류 발생:', error);
+        }
+    }, 500);
 });

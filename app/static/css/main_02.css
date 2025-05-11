@@ -564,3 +564,29 @@
 .auto-save-indicator.visible {
     opacity: 1;
 }
+
+/* 설명 폰트 스타일 일치 */
+.task-form-content textarea[name="taskDescription"] {
+    font-family: inherit;
+    font-size: 12px;
+    color: #666;
+}
+
+.inline-task-form-container .task-form-content input[name="taskTitle"],
+.inline-task-form-container .task-form-content textarea[name="taskDescription"] {
+    font-family: var(--font-main);
+}
+
+/* 고정 버튼 스타일 보장 */
+.task-actions .pin-task {
+    display: flex !important;
+    opacity: 1 !important;
+    padding: 3px;
+    transition: transform 0.2s ease;
+}
+
+/* 고정된 항목 스타일 강화 */
+.task-item.pinned {
+    background-color: #f8f8f8 !important;
+    border-left: 3px solid #888 !important;
+}
