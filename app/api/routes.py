@@ -2,24 +2,45 @@
 from flask import jsonify, request, session
 from flask_login import current_user
 from app import db
-from app.models import Todo, Category
+from app.models import Todo, Category, Notification
 from . import api
 import datetime
+
+# 디버그 엔드포인트
+@api.route('/debug', methods=['GET'])
+def debug_info():
+    """디버깅을 위한 사용자 정보 반환"""
+    debug_data = {
+        'is_authenticated': current_user.is_authenticated,
+        'session_user_id': session.get('user_id'),
+        'session_anonymous_id': session.get('anonymous_id')
+    }
+    
+    if current_user.is_authenticated:
+        debug_data['user_id'] = current_user.id
+        debug_data['username'] = current_user.username
+    
+    return jsonify(debug_data)
 
 # Todo API 엔드포인트
 @api.route('/todos', methods=['GET'])
 def get_todos():
     """사용자의 할 일 목록 가져오기"""
+    print(f"세션 정보: {session}")
     if current_user.is_authenticated:
         # 로그인한 사용자의 할 일 목록
+        print(f"인증된 사용자: {current_user.id}")
         todos = Todo.query.filter_by(user_id=current_user.id).all()
     else:
         # 임시 사용자 ID 사용 (session 기반)
         anonymous_id = session.get('anonymous_id')
         user_id = session.get('user_id')
+        print(f"비인증 사용자 - anonymous_id: {anonymous_id}, user_id: {user_id}")
+        
         # anonymous_id 또는 user_id 둘 중 하나를 사용
         todos = Todo.query.filter_by(user_id=user_id).all() if user_id else []
     
+    print(f"조회된 할 일 수: {len(todos)}")
     return jsonify([todo.to_dict() for todo in todos])
 
 @api.route('/todos', methods=['POST'])
@@ -146,12 +167,16 @@ def toggle_pin(todo_id):
 @api.route('/topics', methods=['GET'])
 def get_categories():
     """사용자의 카테고리 목록 가져오기"""
+    print(f"세션 정보: {session}")
     if current_user.is_authenticated:
+        print(f"인증된 사용자 카테고리 조회: {current_user.id}")
         categories = Category.query.filter_by(user_id=current_user.id).all()
     else:
         user_id = session.get('user_id')
+        print(f"비인증 사용자 카테고리 조회 - user_id: {user_id}")
         categories = Category.query.filter_by(user_id=user_id).all()
     
+    print(f"조회된 카테고리 수: {len(categories)}")
     return jsonify([category.to_dict() for category in categories])
 
 @api.route('/topics', methods=['POST'])
@@ -230,6 +255,59 @@ def delete_category(category_id):
     
     # 카테고리 삭제
     db.session.delete(category)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+# 알림 API 엔드포인트
+@api.route('/notifications', methods=['GET'])
+def get_notifications():
+    """사용자의 알림 목록 가져오기"""
+    if current_user.is_authenticated:
+        # 로그인한 사용자의 알림만 가져옴
+        notifications = Notification.query.filter_by(user_id=current_user.id)\
+                                         .order_by(Notification.created_at.desc())\
+                                         .all()
+        return jsonify([notification.to_dict() for notification in notifications])
+    else:
+        # 비로그인 사용자는 빈 배열 반환
+        return jsonify([])
+
+@api.route('/notifications/read', methods=['POST'])
+def mark_notifications_read():
+    """모든 알림을 읽음으로 표시"""
+    if not current_user.is_authenticated:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    notifications = Notification.query.filter_by(user_id=current_user.id, read=False).all()
+    for notification in notifications:
+        notification.read = True
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
+@api.route('/notifications/<int:notification_id>/read', methods=['POST'])
+def mark_notification_read(notification_id):
+    """특정 알림을 읽음으로 표시"""
+    if not current_user.is_authenticated:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    notification = Notification.query.filter_by(id=notification_id, user_id=current_user.id).first()
+    if not notification:
+        return jsonify({'error': '알림을 찾을 수 없습니다.'}), 404
+    
+    notification.read = True
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@api.route('/notifications/clear', methods=['DELETE'])
+def clear_notifications():
+    """모든 알림 삭제"""
+    if not current_user.is_authenticated:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    Notification.query.filter_by(user_id=current_user.id).delete()
     db.session.commit()
     
     return jsonify({'success': True})
