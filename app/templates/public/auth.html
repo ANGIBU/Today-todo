@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if action == 'login' %}로그인{% else %}회원가입{% endif %} - 투데이 투두</title>
+    <title>{% if action == 'login' %}로그인{% else %}회원가입{% endif %} - 투투</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main_01.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
@@ -13,8 +13,7 @@
     <div class="auth-container">
         <div class="auth-box">
             <div class="auth-header">
-                <h1>투데이 투두</h1>
-                <h2>{% if action == 'login' %}로그인{% else %}회원가입{% endif %}</h2>
+                <h1>{% if action == 'login' %}로그인{% else %}회원가입{% endif %}</h1>
             </div>
             
             {% with messages = get_flashed_messages() %}
