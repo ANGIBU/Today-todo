@@ -26,6 +26,13 @@ def create_app(config_name='development'):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     
+    # 유저 로더 설정
+    from app.models import User
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+    
     # 익명 사용자 세션 관리
     @app.before_request
     def assign_anonymous_id():

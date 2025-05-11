@@ -2,6 +2,7 @@
 from app.extensions import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
 
 # 팔로우 관계를 나타내는 연결 테이블
 followers = db.Table('followers',
@@ -9,7 +10,7 @@ followers = db.Table('followers',
     db.Column('followed_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
     email = db.Column(db.String(120), index=True, unique=True, nullable=False)
@@ -142,10 +143,7 @@ class Category(db.Model):
     anonymous_id = db.Column(db.String(36), index=True, nullable=True)  # UUID 저장용
     
     # 관계 설정 - user_id 또는 anonymous_id가 동일한 할 일만 포함
-    todos = db.relationship('Todo', backref='category', lazy='dynamic', 
-                         primaryjoin="or_(Todo.category_id==Category.id, "
-                                   "and_(Todo.user_id==Category.user_id, "
-                                   "Todo.anonymous_id==Category.anonymous_id))")
+    todos = db.relationship('Todo', backref='category', lazy='dynamic')
     
     def to_dict(self):
         """카테고리 정보를 딕셔너리로 반환"""
