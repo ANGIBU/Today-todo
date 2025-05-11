@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
     {% block css %}{% endblock %}
 </head>
-<body>
+<body data-logged-in="{% if user %}true{% else %}false{% endif %}">
     <div class="container">
         <header>
             <button class="notification-btn" id="notificationBtn"><i class="fas fa-bell"></i></button>
