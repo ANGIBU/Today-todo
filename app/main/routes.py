@@ -17,6 +17,26 @@ def todo():
     user = None
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
+    
+    # 카테고리 생성 처리
+    category_name = request.args.get('categoryName')
+    category_color = request.args.get('categoryColor')
+    
+    if category_name and category_color:
+        user_id = session.get('user_id', 1)
+        
+        # 카테고리 생성
+        category = Category(
+            name=category_name,
+            color=category_color,
+            user_id=user_id
+        )
+        db.session.add(category)
+        db.session.commit()
+        
+        # 쿼리 파라미터 없이 리다이렉트
+        return redirect(url_for('main.todo'))
+    
     return render_template('public/main.html', user=user, active_page='main')
 
 @main.route('/mypage')
@@ -71,7 +91,16 @@ def add_todo():
     user_id = session.get('user_id', 1)
     
     # Todo 객체 생성
-    todo = Todo.from_dict(data, user_id)
+    todo = Todo(
+        title=data['title'],
+        description=data.get('description', ''),
+        date=datetime.strptime(data['date'], '%Y-%m-%d') if isinstance(data['date'], str) else data['date'],
+        completed=data.get('completed', False),
+        pinned=data.get('pinned', False),
+        category_id=data.get('category_id'),
+        is_public=data.get('is_public', False),
+        user_id=user_id
+    )
     
     db.session.add(todo)
     db.session.commit()
