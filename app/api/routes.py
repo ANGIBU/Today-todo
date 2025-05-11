@@ -14,8 +14,9 @@ def get_todos():
         # 로그인한 사용자의 할 일 목록
         todos = Todo.query.filter_by(user_id=current_user.id).all()
     else:
-        # 익명 사용자의 할 일 목록
-        todos = Todo.query.filter_by(anonymous_id=session.get('anonymous_id')).all()
+        # 임시 사용자 ID 사용 (session 기반)
+        user_id = session.get('user_id', 1)
+        todos = Todo.query.filter_by(user_id=user_id).all()
     
     return jsonify([todo.to_dict() for todo in todos])
 
@@ -53,7 +54,8 @@ def create_todo():
     if current_user.is_authenticated:
         todo.user_id = current_user.id
     else:
-        todo.anonymous_id = session.get('anonymous_id')
+        # 임시 사용자 ID 사용
+        todo.user_id = session.get('user_id', 1)
     
     db.session.add(todo)
     db.session.commit()
@@ -69,7 +71,8 @@ def update_todo(todo_id):
     if current_user.is_authenticated:
         todo = Todo.query.filter_by(id=todo_id, user_id=current_user.id).first()
     else:
-        todo = Todo.query.filter_by(id=todo_id, anonymous_id=session.get('anonymous_id')).first()
+        user_id = session.get('user_id', 1)
+        todo = Todo.query.filter_by(id=todo_id, user_id=user_id).first()
     
     if not todo:
         return jsonify({'error': '할 일을 찾을 수 없습니다.'}), 404
@@ -107,7 +110,8 @@ def delete_todo(todo_id):
     if current_user.is_authenticated:
         todo = Todo.query.filter_by(id=todo_id, user_id=current_user.id).first()
     else:
-        todo = Todo.query.filter_by(id=todo_id, anonymous_id=session.get('anonymous_id')).first()
+        user_id = session.get('user_id', 1)
+        todo = Todo.query.filter_by(id=todo_id, user_id=user_id).first()
     
     if not todo:
         return jsonify({'error': '할 일을 찾을 수 없습니다.'}), 404
@@ -124,7 +128,8 @@ def toggle_pin(todo_id):
     if current_user.is_authenticated:
         todo = Todo.query.filter_by(id=todo_id, user_id=current_user.id).first()
     else:
-        todo = Todo.query.filter_by(id=todo_id, anonymous_id=session.get('anonymous_id')).first()
+        user_id = session.get('user_id', 1)
+        todo = Todo.query.filter_by(id=todo_id, user_id=user_id).first()
     
     if not todo:
         return jsonify({'error': '할 일을 찾을 수 없습니다.'}), 404
@@ -142,7 +147,8 @@ def get_categories():
     if current_user.is_authenticated:
         categories = Category.query.filter_by(user_id=current_user.id).all()
     else:
-        categories = Category.query.filter_by(anonymous_id=session.get('anonymous_id')).all()
+        user_id = session.get('user_id', 1)
+        categories = Category.query.filter_by(user_id=user_id).all()
     
     return jsonify([category.to_dict() for category in categories])
 
@@ -164,7 +170,8 @@ def create_category():
     if current_user.is_authenticated:
         category.user_id = current_user.id
     else:
-        category.anonymous_id = session.get('anonymous_id')
+        # 임시 사용자 ID 사용
+        category.user_id = session.get('user_id', 1)
     
     db.session.add(category)
     db.session.commit()
@@ -180,7 +187,8 @@ def update_category(category_id):
     if current_user.is_authenticated:
         category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
     else:
-        category = Category.query.filter_by(id=category_id, anonymous_id=session.get('anonymous_id')).first()
+        user_id = session.get('user_id', 1)
+        category = Category.query.filter_by(id=category_id, user_id=user_id).first()
     
     if not category:
         return jsonify({'error': '카테고리를 찾을 수 없습니다.'}), 404
@@ -202,7 +210,8 @@ def delete_category(category_id):
     if current_user.is_authenticated:
         category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
     else:
-        category = Category.query.filter_by(id=category_id, anonymous_id=session.get('anonymous_id')).first()
+        user_id = session.get('user_id', 1)
+        category = Category.query.filter_by(id=category_id, user_id=user_id).first()
     
     if not category:
         return jsonify({'error': '카테고리를 찾을 수 없습니다.'}), 404
@@ -211,7 +220,8 @@ def delete_category(category_id):
     if current_user.is_authenticated:
         todos = Todo.query.filter_by(category_id=category_id, user_id=current_user.id).all()
     else:
-        todos = Todo.query.filter_by(category_id=category_id, anonymous_id=session.get('anonymous_id')).all()
+        user_id = session.get('user_id', 1)
+        todos = Todo.query.filter_by(category_id=category_id, user_id=user_id).all()
     
     for todo in todos:
         todo.category_id = None
