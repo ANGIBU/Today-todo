@@ -10,7 +10,7 @@ import uuid
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
+login_manager.login_view = 'auth.auth_page'
 
 def create_app(config_name='development'):
     app = Flask(__name__)
@@ -20,6 +20,13 @@ def create_app(config_name='development'):
         app.config.from_object('config.ProductionConfig')
     else:
         app.config.from_object('config.DevelopmentConfig')
+    
+    # 데이터베이스 연결 풀 설정
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 10,
+        'pool_recycle': 60,
+        'pool_pre_ping': True,
+    }
     
     # 데이터베이스 설정
     db.init_app(app)
@@ -38,9 +45,25 @@ def create_app(config_name='development'):
     def assign_anonymous_id():
         if 'user_id' not in session and request.endpoint != 'static':
             if 'anonymous_id' not in session:
-                anonymous_id = str(uuid.uuid4())
-                session['anonymous_id'] = anonymous_id
-                session['user_id'] = anonymous_id  # API에서 사용하기 위한 user_id 추가
+                session['anonymous_id'] = str(uuid.uuid4())
+                
+                # 세션에 임시 사용자 ID 추가 (정수 형태로)
+                with app.app_context():
+                    # 임시 사용자가 없으면 생성
+                    temp_user = User.query.filter_by(username='temp_user').first()
+                    if not temp_user:
+                        temp_user = User(
+                            username='temp_user',
+                            email='temp@example.com',
+                            nickname='임시 사용자',
+                            password_hash='temp'
+                        )
+                        db.session.add(temp_user)
+                        db.session.commit()
+                    
+                    # 세션에 정수 ID 저장
+                    session['temp_user_id'] = temp_user.id
+                    session['user_id'] = temp_user.id
     
     # 블루프린트 등록
     from app.auth import auth as auth_blueprint
