@@ -21,8 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 현재 선택된 색상을 추적하는 변수
     let currentSelectedColor = null;
-    // 색상 선택 시 선택 영역을 저장하는 변수
-    let savedRange = null;
 
     // 서식 툴바 버튼 이벤트
     toolbarButtons.forEach(btn => {
@@ -45,9 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         e.stopPropagation(); // 이벤트 전파 중지
         
-        // 현재 선택 영역 저장
-        savedRange = saveSelection();
-        
         // 색상 선택기 토글
         if (colorPicker.style.display === 'none' || colorPicker.style.display === '') {
             colorPicker.style.display = 'block';
@@ -64,14 +59,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // 모든 색상 옵션에서 selected 클래스 제거
         colorOptions.forEach(option => option.classList.remove('selected'));
         
-        // 저장된 선택 영역 복원
-        if (savedRange) {
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(savedRange);
-            
-            if (!selection.isCollapsed) {
-                // 선택된 텍스트의 색상 가져오기
+        // 현재 선택된 텍스트의 색상 가져오기
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            if (!range.collapsed) {
+                // 선택된 텍스트가 있는 경우
                 const color = document.queryCommandValue('foreColor');
                 if (color) {
                     // RGB 색상을 HEX로 변환
@@ -119,28 +112,23 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('selected');
             currentSelectedColor = color;
             
-            // 저장된 선택 영역 복원
-            if (savedRange) {
-                // 에디터에 포커스
-                diaryEditor.focus();
-                
-                // 선택 영역 복원
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(savedRange);
-                
-                // 선택 영역에 색상 적용
+            // 선택 범위 확인
+            const selection = window.getSelection();
+            const hasSelection = selection.toString().length > 0;
+            
+            if (hasSelection) {
+                // 선택된 텍스트에 색상 적용
                 document.execCommand('foreColor', false, color);
-                
-                // 선택 상태 유지 (색상 선택 후에도 드래그한 영역 유지)
-                savedRange = saveSelection();
             } else {
-                // 선택 영역이 없는 경우, 현재 캐럿 위치에 색상 적용 준비
-                diaryEditor.focus();
+                // 선택 범위가 없는 경우, 현재 캐럿 위치에 색상 적용 준비
                 document.execCommand('foreColor', false, color);
             }
             
-            // 색상 선택기는 닫지 않음 - 연속적인 색상 변경을 위해
+            // 색상 선택기 닫기
+            colorPicker.style.display = 'none';
+            
+            // 에디터에 포커스
+            diaryEditor.focus();
             
             // 변경 후 자동 저장
             startAutoSaveTimer();
@@ -160,42 +148,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 폰트 선택 이벤트
     fontSelect.addEventListener('change', function() {
-        // 현재 선택 영역 저장
-        savedRange = saveSelection();
-        
-        if (savedRange) {
-            // 선택 영역 복원
-            restoreSelection(savedRange);
-            
-            document.execCommand('fontName', false, this.value);
-            
-            // 선택 상태 유지
-            savedRange = saveSelection();
-        } else {
-            document.execCommand('fontName', false, this.value);
-        }
-        
+        document.execCommand('fontName', false, this.value);
         diaryEditor.focus();
         startAutoSaveTimer();
     });
     
     // 폰트 크기 이벤트
     fontSize.addEventListener('change', function() {
-        // 현재 선택 영역 저장
-        savedRange = saveSelection();
-        
-        if (savedRange) {
-            // 선택 영역 복원
-            restoreSelection(savedRange);
-            
-            document.execCommand('fontSize', false, this.value);
-            
-            // 선택 상태 유지
-            savedRange = saveSelection();
-        } else {
-            document.execCommand('fontSize', false, this.value);
-        }
-        
+        document.execCommand('fontSize', false, this.value);
         diaryEditor.focus();
         startAutoSaveTimer();
     });
@@ -218,11 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 에디터에 포커스
                 diaryEditor.focus();
                 
-                // 선택 복원
+                // 현재 위치에 이미지 삽입
                 if (currentRange) {
+                    // 선택 복원 및 이미지 삽입
                     restoreSelection(currentRange);
-                    
-                    // 현재 위치에 이미지 삽입
                     document.execCommand('insertHTML', false, img.outerHTML);
                 } else {
                     // 선택 영역이 없으면 에디터 끝에 추가
@@ -239,6 +198,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // 파일 입력 초기화
         this.value = '';
     });
+    
+    // 저장된 선택 또는 캐럿 위치 복원 함수
+    function restoreSelection(range) {
+        if (range) {
+            if (window.getSelection) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    }
     
     // 외부 클릭 시 색상 선택기 닫기
     document.addEventListener('click', function(e) {
@@ -291,17 +261,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 저장된 선택 또는 캐럿 위치 복원 함수
-    function restoreSelection(range) {
-        if (range) {
-            if (window.getSelection) {
-                const sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
-        }
-    }
-    
     // 에디터 내용 변경 감지
     diaryEditor.addEventListener('input', function() {
         startAutoSaveTimer();
@@ -326,11 +285,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // 현재 선택한 색상 적용
             document.execCommand('foreColor', false, currentSelectedColor);
         }
-    });
-    
-    // 텍스트 선택 이벤트 감지
-    diaryEditor.addEventListener('mouseup', function() {
-        savedRange = saveSelection();
     });
     
     // 저장된 일기 불러오기
@@ -373,12 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && colorPicker.style.display === 'block') {
             colorPicker.style.display = 'none';
-            
-            // 선택 영역 유지를 위해 포커스 복원
             diaryEditor.focus();
-            if (savedRange) {
-                restoreSelection(savedRange);
-            }
         }
     });
 });

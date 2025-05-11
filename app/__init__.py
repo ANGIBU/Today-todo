@@ -1,32 +1,51 @@
 # app/__init__.py
-from flask import Flask
-from config import config
-from app.extensions import db
 import os
+from flask import Flask, session, request
+from flask_login import LoginManager
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+import uuid
 
-def create_app(config_name):
+# 데이터베이스 초기화
+db = SQLAlchemy()
+migrate = Migrate()
+login_manager = LoginManager()
+login_manager.login_view = 'auth.login'
+
+def create_app(config_name='development'):
     app = Flask(__name__)
-    app.config.from_object(config[config_name])
     
-    # 확장 초기화
+    # 설정 로드
+    if config_name == 'production':
+        app.config.from_object('config.ProductionConfig')
+    else:
+        app.config.from_object('config.DevelopmentConfig')
+    
+    # 데이터베이스 설정
     db.init_app(app)
+    migrate.init_app(app, db)
+    login_manager.init_app(app)
     
-    # 업로드 폴더 생성
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    # 익명 사용자 세션 관리
+    @app.before_request
+    def assign_anonymous_id():
+        if 'user_id' not in session and request.endpoint != 'static':
+            if 'anonymous_id' not in session:
+                session['anonymous_id'] = str(uuid.uuid4())
     
     # 블루프린트 등록
-    from app.auth.routes import auth as auth_blueprint
-    from app.main.routes import main as main_blueprint
-    from app.social.routes import social as social_blueprint
+    from app.auth import auth as auth_blueprint
+    from app.main import main as main_blueprint
+    from app.social import social as social_blueprint
+    from app.api import api as api_blueprint
     
-    app.register_blueprint(auth_blueprint)
+    app.register_blueprint(auth_blueprint, url_prefix='/auth')
     app.register_blueprint(main_blueprint)
-    app.register_blueprint(social_blueprint)
+    app.register_blueprint(social_blueprint, url_prefix='/social')
+    app.register_blueprint(api_blueprint, url_prefix='/api')
     
-    # 데이터베이스 초기화
+    # 데이터베이스 생성
     with app.app_context():
         db.create_all()
-        from app.utils import create_default_user
-        create_default_user()
     
     return app

@@ -20,8 +20,8 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 관계 설정
-    todos = db.relationship('Todo', backref='user', lazy='dynamic', cascade='all, delete-orphan')
-    categories = db.relationship('Category', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    todos = db.relationship('Todo', foreign_keys='Todo.user_id', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    categories = db.relationship('Category', foreign_keys='Category.user_id', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     
     # 알림 관계 수정 - foreign_keys 명시적 지정
     notifications = db.relationship('Notification', 
@@ -88,8 +88,9 @@ class Todo(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # 외래 키
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # 외래 키 - user_id는 로그인한 경우만, anonymous_id는 비로그인 사용자용
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    anonymous_id = db.Column(db.String(36), index=True, nullable=True)  # UUID 저장용
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     
     def to_dict(self):
@@ -103,24 +104,32 @@ class Todo(db.Model):
             'pinned': self.pinned,
             'category_id': self.category_id,
             'is_public': self.is_public,
+            'user_id': self.user_id,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S')
         }
         
     @staticmethod
-    def from_dict(data, user_id):
-        """딕셔너리에서 할 일 객체 생성"""
+    def from_dict(data, user_id=None, anonymous_id=None):
+        """딕셔너리에서 할 일 객체 생성 (비로그인 사용자 지원)"""
         date = datetime.strptime(data['date'], '%Y-%m-%d') if isinstance(data['date'], str) else data['date']
-        return Todo(
+        todo = Todo(
             title=data['title'],
             description=data.get('description', ''),
             date=date,
             completed=data.get('completed', False),
             pinned=data.get('pinned', False),
             is_public=data.get('is_public', False),
-            category_id=data.get('category_id'),
-            user_id=user_id
+            category_id=data.get('category_id')
         )
+        
+        # 로그인 상태에 따라 사용자 ID 설정
+        if user_id:
+            todo.user_id = user_id
+        elif anonymous_id:
+            todo.anonymous_id = anonymous_id
+            
+        return todo
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -128,11 +137,15 @@ class Category(db.Model):
     color = db.Column(db.String(20), default='#3498db')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # 외래 키
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # 외래 키 - user_id는 로그인한 경우만, anonymous_id는 비로그인 사용자용
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    anonymous_id = db.Column(db.String(36), index=True, nullable=True)  # UUID 저장용
     
-    # 관계 설정
-    todos = db.relationship('Todo', backref='category', lazy='dynamic', cascade='all, delete-orphan')
+    # 관계 설정 - user_id 또는 anonymous_id가 동일한 할 일만 포함
+    todos = db.relationship('Todo', backref='category', lazy='dynamic', 
+                         primaryjoin="or_(Todo.category_id==Category.id, "
+                                   "and_(Todo.user_id==Category.user_id, "
+                                   "Todo.anonymous_id==Category.anonymous_id))")
     
     def to_dict(self):
         """카테고리 정보를 딕셔너리로 반환"""
@@ -142,6 +155,22 @@ class Category(db.Model):
             'color': self.color,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }
+    
+    @staticmethod
+    def from_dict(data, user_id=None, anonymous_id=None):
+        """딕셔너리에서 카테고리 객체 생성 (비로그인 사용자 지원)"""
+        category = Category(
+            name=data['name'],
+            color=data.get('color', '#3498db')
+        )
+        
+        # 로그인 상태에 따라 사용자 ID 설정
+        if user_id:
+            category.user_id = user_id
+        elif anonymous_id:
+            category.anonymous_id = anonymous_id
+            
+        return category
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
