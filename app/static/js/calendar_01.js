@@ -79,11 +79,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // 초기 데이터 로드
     async function loadInitialData() {
         try {
+            console.log('초기 데이터 로드 시작');
             // 카테고리와 할일 데이터 로드
             await Promise.all([fetchTodos(), fetchCategories()]);
             
             // 로그인 상태에 따라 로컬 스토리지 처리
             const isLoggedIn = document.body.getAttribute('data-logged-in') === 'true';
+            console.log('로그인 상태:', isLoggedIn);
+            
             if (!isLoggedIn) {
                 // 로컬 스토리지에서 비로그인 사용자 데이터 로드
                 loadLocalData();
@@ -102,12 +105,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 비로그인 사용자 데이터 로컬 스토리지에서 로드
     function loadLocalData() {
+        console.log('로컬 데이터 로드 시작');
         const deviceId = getDeviceId();
+        console.log('장치 ID:', deviceId);
         
         // 로컬 스토리지에서 카테고리 데이터 로드
         const storedCategories = localStorage.getItem(`categories_${deviceId}`);
         if (storedCategories) {
             const parsedCategories = JSON.parse(storedCategories);
+            console.log('로컬 카테고리 데이터:', parsedCategories);
             // 중복 방지를 위해 ID 기준으로 병합
             parsedCategories.forEach(localCat => {
                 if (!categories.some(cat => cat.id === localCat.id)) {
@@ -120,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const storedTodos = localStorage.getItem(`todos_${deviceId}`);
         if (storedTodos) {
             const parsedTodos = JSON.parse(storedTodos);
+            console.log('로컬 할일 데이터:', parsedTodos);
             // 중복 방지를 위해 ID 기준으로 병합
             parsedTodos.forEach(localTodo => {
                 if (!todos.some(todo => todo.id === localTodo.id)) {
@@ -403,10 +410,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // API에서 할 일 목록 가져오기
     async function fetchTodos() {
         try {
+            console.log('API 요청 시작: /api/todos');
             const response = await fetch('/api/todos');
-            if (!response.ok) throw new Error('Todo 데이터 로드 실패');
+            console.log('API 응답 상태:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                console.error('응답 상태 오류:', response.status, response.statusText);
+                throw new Error('Todo 데이터 로드 실패');
+            }
             
             const result = await response.json();
+            console.log('받은 데이터:', result);
             
             // 날짜 문자열을 Date 객체로 변환
             todos = result.map(todo => {
@@ -418,6 +432,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 비로그인 사용자인 경우 로컬 저장
             const isLoggedIn = document.body.getAttribute('data-logged-in') === 'true';
+            console.log('로그인 상태:', isLoggedIn);
+            
             if (!isLoggedIn) {
                 saveLocalData();
             }
@@ -432,10 +448,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // API에서 카테고리 목록 가져오기
     async function fetchCategories() {
         try {
+            console.log('API 요청 시작: /api/topics');
             const response = await fetch('/api/topics');
-            if (!response.ok) throw new Error('Category 데이터 로드 실패');
+            console.log('API 응답 상태:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                console.error('응답 상태 오류:', response.status, response.statusText);
+                throw new Error('Category 데이터 로드 실패');
+            }
             
             categories = await response.json();
+            console.log('받은 카테고리 데이터:', categories);
             
             // 비로그인 사용자인 경우 로컬 저장
             const isLoggedIn = document.body.getAttribute('data-logged-in') === 'true';

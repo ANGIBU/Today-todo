@@ -38,7 +38,9 @@ def create_app(config_name='development'):
     def assign_anonymous_id():
         if 'user_id' not in session and request.endpoint != 'static':
             if 'anonymous_id' not in session:
-                session['anonymous_id'] = str(uuid.uuid4())
+                anonymous_id = str(uuid.uuid4())
+                session['anonymous_id'] = anonymous_id
+                session['user_id'] = anonymous_id  # API에서 사용하기 위한 user_id 추가
     
     # 블루프린트 등록
     from app.auth import auth as auth_blueprint
