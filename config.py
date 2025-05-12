@@ -1,6 +1,10 @@
-# config.py
+# /home/livon/projects/today_todo/config.py
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 class Config:
     # 기본 설정
@@ -9,7 +13,7 @@ class Config:
     TESTING = False
     
     # 데이터베이스 설정
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://livon:dks12345@192.168.123.105/today_todo'  # todo_db에서 today_todo로 변경
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI') or 'mysql+pymysql://livon:dks12345@mysql:3306/today_todo'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # 세션 설정
