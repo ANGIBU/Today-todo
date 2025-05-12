@@ -1,7 +1,7 @@
 # app/__init__.py
 import os
-from flask import Flask, session, request
-from flask_login import LoginManager
+from flask import Flask, session, request, g
+from flask_login import LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import uuid
@@ -21,6 +21,15 @@ def create_app(config_name='development'):
     else:
         app.config.from_object('config.DevelopmentConfig')
     
+    # 데이터베이스 연결 풀 설정
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 20,          # 기본 풀 크기
+        'max_overflow': 20,       # 추가 연결 허용
+        'pool_recycle': 300,      # 5분마다 연결 재활용
+        'pool_pre_ping': True,    # 사용 전 연결 유효성 확인
+        'pool_timeout': 60        # 연결 대기 시간 증가
+    }
+    
     # 데이터베이스 설정
     db.init_app(app)
     migrate.init_app(app, db)
@@ -36,10 +45,18 @@ def create_app(config_name='development'):
     # 익명 사용자 세션 관리
     @app.before_request
     def assign_anonymous_id():
-        if not current_user.is_authenticated and request.endpoint != 'static':
+        if not request.endpoint or request.endpoint == 'static':
+            return
+            
+        if not current_user.is_authenticated:
             if 'anonymous_id' not in session:
                 session['anonymous_id'] = str(uuid.uuid4())
                 session['user_id'] = 1  # 기본 임시 사용자 ID
+    
+    # 요청 완료 후 DB 세션 정리
+    @app.teardown_appcontext
+    def cleanup_db_session(exception=None):
+        db.session.remove()
     
     # 블루프린트 등록
     from app.auth import auth as auth_blueprint
@@ -70,8 +87,6 @@ def create_app(config_name='development'):
                 db.session.commit()
         except Exception as e:
             print(f"데이터베이스 초기화 중 오류: {e}")
+            db.session.rollback()
     
     return app
-
-# 순환 참조 방지
-from flask_login import current_user
