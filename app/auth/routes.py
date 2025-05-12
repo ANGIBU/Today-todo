@@ -1,5 +1,6 @@
 # app/auth/routes.py
 from flask import render_template, redirect, url_for, request, session, flash, jsonify
+from flask_login import login_user, logout_user, login_required, current_user
 from app.auth import auth
 from app.models import User, Category
 from app.extensions import db
@@ -16,6 +17,9 @@ def auth_page():
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     """로그인 처리"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.todo'))
+        
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -26,26 +30,28 @@ def login():
         try:
             user = User.query.filter_by(username=username).first()
             if user and user.check_password(password):
-                # 기존 익명 ID 저장
-                anonymous_id = session.get('anonymous_id')
+                # Flask-Login으로 로그인 처리
+                login_user(user)
                 
                 # 세션 데이터 설정
-                session.clear()  # 세션 초기화
                 session['user_id'] = user.id
                 session['username'] = user.username
                 session['nickname'] = user.nickname
                 
-                # 익명 사용자 데이터를 로그인 사용자로 마이그레이션하는 로직 추가 가능
-                
                 logger.info(f"로그인 성공: {username}")
-                flash('로그인되었습니다.')
-                return redirect(url_for('main.todo'))
+                flash('로그인되었습니다.', 'message')
+                
+                # 다음에 이동할 페이지
+                next_page = request.args.get('next')
+                if not next_page or next_page.startswith('/'):
+                    next_page = url_for('main.todo')
+                return redirect(next_page)
             
             logger.warning(f"로그인 실패 (잘못된 자격 증명): {username}")
             flash('아이디 또는 비밀번호가 잘못되었습니다.')
         except Exception as e:
             logger.error(f"로그인 중 예외 발생: {str(e)}")
-            db.session.rollback()  # 데이터베이스 세션 롤백
+            db.session.rollback()
             flash('로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
     
     return render_template('public/auth.html', action='login')
@@ -53,6 +59,9 @@ def login():
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
     """회원가입 처리"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.todo'))
+        
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
@@ -102,7 +111,7 @@ def register():
             return redirect(url_for('auth.login'))
         except Exception as e:
             logger.error(f"회원가입 중 예외 발생: {str(e)}")
-            db.session.rollback()  # 데이터베이스 세션 롤백
+            db.session.rollback()
             flash('회원가입 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
     
     return render_template('public/auth.html', action='register')
@@ -113,45 +122,44 @@ def logout():
     username = session.get('username')
     logger.info(f"로그아웃: {username}")
     
-    session.clear()  # 세션 완전히 초기화
+    # Flask-Login 로그아웃
+    logout_user()
+    
+    # 세션 데이터 삭제
+    session.pop('user_id', None)
+    session.pop('username', None)
+    session.pop('nickname', None)
+    
     flash('로그아웃되었습니다.')
     return redirect(url_for('main.index'))
 
 @auth.route('/api/user/profile', methods=['GET'])
+@login_required
 def get_user_profile():
     """사용자 프로필 정보 반환"""
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({'error': '로그인이 필요합니다.'}), 401
-    
     try:
-        user = User.query.get_or_404(user_id)
-        return jsonify(user.to_dict())
+        return jsonify(current_user.to_dict())
     except Exception as e:
         logger.error(f"프로필 조회 중 오류: {str(e)}")
         return jsonify({'error': '사용자 정보를 가져오는 중 오류가 발생했습니다.'}), 500
 
 @auth.route('/api/user/profile', methods=['PUT'])
+@login_required
 def update_user_profile():
     """사용자 프로필 업데이트"""
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({'error': '로그인이 필요합니다.'}), 401
-    
     try:
-        user = User.query.get_or_404(user_id)
         data = request.json
         
         if 'nickname' in data:
-            user.nickname = data['nickname']
+            current_user.nickname = data['nickname']
             session['nickname'] = data['nickname']
         if 'bio' in data:
-            user.bio = data['bio']
+            current_user.bio = data['bio']
         
         db.session.commit()
-        logger.info(f"프로필 업데이트 성공: {user.username}")
+        logger.info(f"프로필 업데이트 성공: {current_user.username}")
         
-        return jsonify(user.to_dict())
+        return jsonify(current_user.to_dict())
     except Exception as e:
         logger.error(f"프로필 업데이트 중 오류: {str(e)}")
         db.session.rollback()
