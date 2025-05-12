@@ -21,13 +21,6 @@ def create_app(config_name='development'):
     else:
         app.config.from_object('config.DevelopmentConfig')
     
-    # 데이터베이스 연결 풀 설정
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': 10,
-        'pool_recycle': 60,
-        'pool_pre_ping': True,
-    }
-    
     # 데이터베이스 설정
     db.init_app(app)
     migrate.init_app(app, db)
@@ -43,27 +36,10 @@ def create_app(config_name='development'):
     # 익명 사용자 세션 관리
     @app.before_request
     def assign_anonymous_id():
-        if 'user_id' not in session and request.endpoint != 'static':
+        if not current_user.is_authenticated and request.endpoint != 'static':
             if 'anonymous_id' not in session:
                 session['anonymous_id'] = str(uuid.uuid4())
-                
-                # 세션에 임시 사용자 ID 추가 (정수 형태로)
-                with app.app_context():
-                    # 임시 사용자가 없으면 생성
-                    temp_user = User.query.filter_by(username='temp_user').first()
-                    if not temp_user:
-                        temp_user = User(
-                            username='temp_user',
-                            email='temp@example.com',
-                            nickname='임시 사용자',
-                            password_hash='temp'
-                        )
-                        db.session.add(temp_user)
-                        db.session.commit()
-                    
-                    # 세션에 정수 ID 저장
-                    session['temp_user_id'] = temp_user.id
-                    session['user_id'] = temp_user.id
+                session['user_id'] = 1  # 기본 임시 사용자 ID
     
     # 블루프린트 등록
     from app.auth import auth as auth_blueprint
@@ -76,8 +52,26 @@ def create_app(config_name='development'):
     app.register_blueprint(social_blueprint, url_prefix='/social')
     app.register_blueprint(api_blueprint, url_prefix='/api')
     
-    # 데이터베이스 생성
+    # 데이터베이스 생성 (오류 처리 추가)
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            # 임시 사용자 생성 확인
+            temp_user = User.query.filter_by(id=1).first()
+            if not temp_user:
+                temp_user = User(
+                    id=1,
+                    username='temp_user',
+                    email='temp@example.com',
+                    nickname='임시 사용자'
+                )
+                temp_user.set_password('temp123')
+                db.session.add(temp_user)
+                db.session.commit()
+        except Exception as e:
+            print(f"데이터베이스 초기화 중 오류: {e}")
     
     return app
+
+# 순환 참조 방지
+from flask_login import current_user
