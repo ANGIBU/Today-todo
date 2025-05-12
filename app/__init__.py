@@ -21,13 +21,13 @@ def create_app(config_name='development'):
     else:
         app.config.from_object('config.DevelopmentConfig')
     
-    # 데이터베이스 연결 풀 설정
+    # 데이터베이스 연결 풀 설정 개선
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': 20,          # 기본 풀 크기
-        'max_overflow': 20,       # 추가 연결 허용
+        'pool_size': 20,          # 기본 풀 크기 증가 (10 → 20)
+        'max_overflow': 20,       # 추가 연결 허용 증가 (10 → 20)
         'pool_recycle': 300,      # 5분마다 연결 재활용
         'pool_pre_ping': True,    # 사용 전 연결 유효성 확인
-        'pool_timeout': 60        # 연결 대기 시간 증가
+        'pool_timeout': 60        # 연결 대기 시간 증가 (30 → 60)
     }
     
     # 데이터베이스 설정

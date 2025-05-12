@@ -486,6 +486,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 날짜별 할 일 및 카테고리 렌더링 - 수정됨
     function renderTodosAndCategories(dateStr) {
+        console.log('할일 목록 렌더링 시작:', dateStr);
+        console.log('현재 카테고리:', window.todoApp.categories);
+        console.log('현재 할일 목록:', window.todoApp.todos);
+        
         // 인라인 폼 상태 저장
         const wasAddingCategory = window.todoApp.isAddingCategory;
         const wasEditingCategory = window.todoApp.isEditingCategory;
@@ -500,9 +504,18 @@ document.addEventListener('DOMContentLoaded', function() {
         tasksList.innerHTML = '';
         
         // 해당 날짜의 할 일 필터링 (핀 된 항목 포함)
-        const dayTodos = window.todoApp.todos.filter(todo => 
-            todo.date === dateStr || todo.pinned === true
-        );
+        const dayTodos = window.todoApp.todos.filter(todo => {
+            const todoDate = formatDate(new Date(todo.date));
+            const matchesDate = todoDate === dateStr;
+            const isPinned = todo.pinned === true || todo.pinned === 1; // 숫자 1도 포함
+            
+            console.log(`할일 ID ${todo.id} 날짜 비교:`, todoDate, dateStr, matchesDate);
+            console.log(`할일 ID ${todo.id} 핀 상태:`, todo.pinned, isPinned);
+            
+            return matchesDate || isPinned;
+        });
+        
+        console.log('날짜에 해당하는 할일:', dayTodos);
         
         if (dayTodos.length === 0 && window.todoApp.categories.length === 0 && !wasAddingCategory) {
             // 할 일과 카테고리가 모두 없을 경우
@@ -531,10 +544,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
+        console.log('카테고리별 할일:', todosByCategory);
+        console.log('카테고리 없는 할일:', todosWithoutCategory);
+        
         // 카테고리별 할 일 렌더링
         for (const categoryId in todosByCategory) {
             const category = window.todoApp.categories.find(cat => cat.id === parseInt(categoryId));
-            if (!category) continue;
+            if (!category) {
+                console.warn('해당 카테고리를 찾을 수 없음:', categoryId);
+                continue;
+            }
             
             const categoryContainer = document.createElement('div');
             categoryContainer.classList.add('category-container');
@@ -637,6 +656,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.todoApp.renderInlineTaskForm(todo.category_id, todo);
             }
         }
+        
+        console.log('할일 목록 렌더링 완료');
+    }
+    
+    // 날짜를 YYYY-MM-DD 형식으로 변환
+    function formatDate(date) {
+        if (!date) return '';
+        
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
     
     // toggleTodo 이벤트 리스너 등록

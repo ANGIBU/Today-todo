@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 비로그인 사용자 데이터 로컬 스토리지에서 로드
+    // 비로그인 사용자 데이터 로컬 스토리지에서 로드 (수정됨)
     function loadLocalData() {
         console.log('로컬 데이터 로드 시작');
         const deviceId = getDeviceId();
@@ -114,12 +114,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (storedCategories) {
             const parsedCategories = JSON.parse(storedCategories);
             console.log('로컬 카테고리 데이터:', parsedCategories);
-            // 중복 방지를 위해 ID 기준으로 병합
-            parsedCategories.forEach(localCat => {
-                if (!categories.some(cat => cat.id === localCat.id)) {
-                    categories.push(localCat);
-                }
-            });
+            
+            // 서버 데이터 우선: 로컬 데이터는 서버에 없는 것만 추가
+            if (categories.length === 0) {
+                categories = parsedCategories;
+            } else {
+                // 서버 데이터와 로컬 데이터 병합 (ID 기준 중복 방지)
+                const mergedCategories = [...categories];
+                
+                parsedCategories.forEach(localCat => {
+                    const existingIndex = mergedCategories.findIndex(cat => cat.id === localCat.id);
+                    if (existingIndex === -1) {
+                        mergedCategories.push(localCat);
+                    }
+                });
+                
+                categories = mergedCategories;
+            }
         }
         
         // 로컬 스토리지에서 할일 데이터 로드
@@ -127,17 +138,34 @@ document.addEventListener('DOMContentLoaded', function() {
         if (storedTodos) {
             const parsedTodos = JSON.parse(storedTodos);
             console.log('로컬 할일 데이터:', parsedTodos);
-            // 중복 방지를 위해 ID 기준으로 병합
-            parsedTodos.forEach(localTodo => {
-                if (!todos.some(todo => todo.id === localTodo.id)) {
-                    // 날짜 문자열을 Date 객체로 변환
-                    if (localTodo.date && typeof localTodo.date === 'string') {
-                        localTodo.date = new Date(localTodo.date);
+            
+            // 서버 데이터 우선: 로컬 데이터는 서버에 없는 것만 추가
+            if (todos.length === 0) {
+                todos = parsedTodos.map(todo => {
+                    if (todo.date && typeof todo.date === 'string') {
+                        return { ...todo, date: new Date(todo.date) };
                     }
-                    todos.push(localTodo);
-                }
-            });
+                    return todo;
+                });
+            } else {
+                // 서버 데이터와 로컬 데이터 병합 (ID 기준 중복 방지)
+                const mergedTodos = [...todos];
+                
+                parsedTodos.forEach(localTodo => {
+                    const existingIndex = mergedTodos.findIndex(todo => todo.id === localTodo.id);
+                    if (existingIndex === -1) {
+                        if (localTodo.date && typeof localTodo.date === 'string') {
+                            localTodo.date = new Date(localTodo.date);
+                        }
+                        mergedTodos.push(localTodo);
+                    }
+                });
+                
+                todos = mergedTodos;
+            }
         }
+        
+        console.log('통합된 데이터:', { categories: categories.length, todos: todos.length });
     }
     
     // 비로그인 사용자 데이터 로컬 스토리지에 저장
