@@ -5,6 +5,11 @@ from flask_login import LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import uuid
+import logging
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # 데이터베이스 초기화
 db = SQLAlchemy()
@@ -52,6 +57,7 @@ def create_app(config_name='development'):
             if 'anonymous_id' not in session:
                 session['anonymous_id'] = str(uuid.uuid4())
                 session['user_id'] = 1  # 기본 임시 사용자 ID
+                logger.info(f"새 익명 사용자 세션 생성: {session['anonymous_id']}")
     
     # 요청 완료 후 DB 세션 정리
     @app.teardown_appcontext
@@ -59,18 +65,22 @@ def create_app(config_name='development'):
         db.session.remove()
     
     # 블루프린트 등록
-    from app.auth import auth as auth_blueprint
-    from app.main import main as main_blueprint
-    from app.social import social as social_blueprint
-    from app.api import api as api_blueprint
-    
-    app.register_blueprint(auth_blueprint, url_prefix='/auth')
-    app.register_blueprint(main_blueprint)
-    app.register_blueprint(social_blueprint, url_prefix='/social')
-    app.register_blueprint(api_blueprint, url_prefix='/api')
-    
-    # 데이터베이스 생성 (오류 처리 추가)
     with app.app_context():
+        # 블루프린트 불러오기
+        from app.auth import auth as auth_blueprint
+        from app.main import main as main_blueprint
+        from app.social import social as social_blueprint
+        from app.api import api as api_blueprint
+        
+        # 블루프린트 등록
+        app.register_blueprint(auth_blueprint, url_prefix='/auth')
+        app.register_blueprint(main_blueprint)
+        app.register_blueprint(social_blueprint, url_prefix='/social')
+        app.register_blueprint(api_blueprint, url_prefix='/api')
+        
+        logger.info("모든 블루프린트가 성공적으로 등록되었습니다")
+    
+        # 데이터베이스 생성 (오류 처리 추가)
         try:
             db.create_all()
             # 임시 사용자 생성 확인
@@ -85,8 +95,9 @@ def create_app(config_name='development'):
                 temp_user.set_password('temp123')
                 db.session.add(temp_user)
                 db.session.commit()
+                logger.info("임시 사용자가 생성되었습니다")
         except Exception as e:
-            print(f"데이터베이스 초기화 중 오류: {e}")
+            logger.error(f"데이터베이스 초기화 중 오류: {e}")
             db.session.rollback()
     
     return app
