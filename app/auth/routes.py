@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 @auth.route('/auth')
 def auth_page():
     """인증 페이지 (로그인/회원가입 선택)"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.todo'))
     return render_template('public/auth.html', action='login')
 
 @auth.route('/login', methods=['GET', 'POST'])

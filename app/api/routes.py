@@ -1,5 +1,6 @@
 # app/api/routes.py
 from flask import jsonify, request, session
+from flask_login import current_user, login_required
 from app.extensions import db
 from app.models import Todo, Category, Notification, User
 from app.api import api
@@ -15,6 +16,10 @@ def get_user_info():
     anonymous_id = session.get('anonymous_id')
     
     print(f"세션 정보: {session}")
+    
+    if current_user.is_authenticated:
+        print(f"인증된 사용자: {current_user.id}")
+        return current_user.id, None, current_user
     
     if user_id:
         user = User.query.get(user_id)
@@ -274,34 +279,25 @@ def delete_category(category_id):
 
 # 알림 API 엔드포인트
 @api.route('/notifications', methods=['GET'])
+@login_required
 def get_notifications():
     """사용자의 알림 목록 가져오기"""
     try:
-        user_id, anonymous_id, user = get_user_info()
-        
-        if user and user.id > 1:  # 실제 사용자만 알림 조회 가능
-            notifications = Notification.query.filter_by(user_id=user_id)\
-                                            .order_by(Notification.created_at.desc())\
-                                            .all()
-            return jsonify([notification.to_dict() for notification in notifications])
-        
-        # 임시 사용자나 비로그인 사용자는 빈 배열 반환
-        return jsonify([])
+        notifications = Notification.query.filter_by(user_id=current_user.id)\
+                                        .order_by(Notification.created_at.desc())\
+                                        .all()
+        return jsonify([notification.to_dict() for notification in notifications])
     except Exception as e:
         logger.error(f"알림 조회 중 오류 발생: {str(e)}")
         db.session.rollback()
         return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
 
 @api.route('/notifications/read', methods=['POST'])
+@login_required
 def mark_notifications_read():
     """모든 알림을 읽음으로 표시"""
     try:
-        user_id, anonymous_id, user = get_user_info()
-        
-        if not user or user.id <= 1:
-            return jsonify({'error': '로그인이 필요합니다.'}), 401
-        
-        notifications = Notification.query.filter_by(user_id=user_id, read=False).all()
+        notifications = Notification.query.filter_by(user_id=current_user.id, read=False).all()
         for notification in notifications:
             notification.read = True
         
@@ -313,15 +309,11 @@ def mark_notifications_read():
         return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
 
 @api.route('/notifications/clear', methods=['DELETE'])
+@login_required
 def clear_notifications():
     """모든 알림 삭제"""
     try:
-        user_id, anonymous_id, user = get_user_info()
-        
-        if not user or user.id <= 1:
-            return jsonify({'error': '로그인이 필요합니다.'}), 401
-        
-        Notification.query.filter_by(user_id=user_id).delete()
+        Notification.query.filter_by(user_id=current_user.id).delete()
         db.session.commit()
         
         return jsonify({'success': True})
