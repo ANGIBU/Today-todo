@@ -93,7 +93,7 @@ class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     message = db.Column(db.String(200), nullable=False)
     type = db.Column(db.String(20)) # follow, like, mention 등
-    read = db.Column(db.Boolean, default=False)
+    is_read = db.Column(db.Boolean, default=False)  # read에서 is_read로 변경
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 외래 키

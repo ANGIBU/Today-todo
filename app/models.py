@@ -15,7 +15,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
     email = db.Column(db.String(120), index=True, unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
-    nickname = db.Column(db.String(64), nullable=False)
+    nickname = db.Column(db.String(64), nullable=True)
     bio = db.Column(db.String(200))
     profile_image = db.Column(db.String(200), default='default.jpg')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -89,7 +89,7 @@ class Todo(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # 외래 키 - anonymous_id 필드 제거
+    # 외래 키
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     
@@ -110,7 +110,7 @@ class Todo(db.Model):
         }
         
     @staticmethod
-    def from_dict(data, user_id=None, anonymous_id=None):
+    def from_dict(data, user_id=None):
         """딕셔너리에서 할 일 객체 생성"""
         date = datetime.strptime(data['date'], '%Y-%m-%d') if isinstance(data['date'], str) else data['date']
         todo = Todo(
@@ -123,7 +123,6 @@ class Todo(db.Model):
             category_id=data.get('category_id')
         )
         
-        # anonymous_id 관련 로직 제거, user_id만 설정
         if user_id:
             todo.user_id = user_id
             
@@ -135,7 +134,7 @@ class Category(db.Model):
     color = db.Column(db.String(20), default='#3498db')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # 외래 키 - anonymous_id 필드 제거
+    # 외래 키
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     
     # 관계 설정
@@ -151,14 +150,13 @@ class Category(db.Model):
         }
     
     @staticmethod
-    def from_dict(data, user_id=None, anonymous_id=None):
+    def from_dict(data, user_id=None):
         """딕셔너리에서 카테고리 객체 생성"""
         category = Category(
             name=data['name'],
             color=data.get('color', '#3498db')
         )
         
-        # anonymous_id 관련 로직 제거, user_id만 설정
         if user_id:
             category.user_id = user_id
             
@@ -168,7 +166,7 @@ class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     message = db.Column(db.String(200), nullable=False)
     type = db.Column(db.String(20))  # follow, like, mention 등
-    read = db.Column(db.Boolean, default=False)
+    is_read = db.Column(db.Boolean, default=False)  # 'read' 대신 'is_read' 사용 (SQL 예약어 문제 해결)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 외래 키
@@ -185,7 +183,7 @@ class Notification(db.Model):
             'id': self.id,
             'message': self.message,
             'type': self.type,
-            'read': self.read,
+            'is_read': self.is_read,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M'),
             'sender': None
         }
