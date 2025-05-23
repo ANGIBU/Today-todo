@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import uuid
 import logging
+import pymysql
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +18,22 @@ migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.auth_page'
 
+def test_mysql_connection(host, user, password, database):
+    """MySQL 연결 테스트"""
+    try:
+        connection = pymysql.connect(
+            host=host,
+            user=user,
+            password=password,
+            database=database,
+            connect_timeout=5
+        )
+        connection.close()
+        return True
+    except Exception as e:
+        logger.error(f"MySQL 연결 테스트 실패: {e}")
+        return False
+
 def create_app(config_name='development'):
     app = Flask(__name__)
     
@@ -26,18 +43,31 @@ def create_app(config_name='development'):
     else:
         app.config.from_object('config.DevelopmentConfig')
     
+    # MySQL 연결 테스트 (production 모드에서만)
+    if config_name == 'production':
+        mysql_available = test_mysql_connection(
+            host='192.168.123.104',
+            user='livon',
+            password='dks12345',
+            database='today_todo'
+        )
+        
+        if not mysql_available:
+            logger.warning("MySQL 연결 실패. SQLite로 폴백합니다.")
+            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo_fallback.db'
+    
     # 디버그 설정
     if app.config['DEBUG']:
         logging.basicConfig(level=logging.DEBUG)
     
-    # 데이터베이스 연결 풀 설정 개선
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': 10,
+    # 데이터베이스 연결 풀 설정
+    app.config.setdefault('SQLALCHEMY_ENGINE_OPTIONS', {
+        'pool_size': 5,
         'max_overflow': 10,
         'pool_recycle': 300,
         'pool_pre_ping': True,
         'pool_timeout': 30
-    }
+    })
     
     # 확장 프로그램 초기화
     db.init_app(app)
@@ -72,6 +102,13 @@ def create_app(config_name='development'):
     def cleanup_db_session(exception=None):
         db.session.remove()
     
+    # 오류 핸들러 추가
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        logger.error(f"500 오류 발생: {error}")
+        return "서버 내부 오류가 발생했습니다.", 500
+    
     # 블루프린트 등록
     with app.app_context():
         # 블루프린트 불러오기
@@ -88,29 +125,33 @@ def create_app(config_name='development'):
         
         logger.info("모든 블루프린트가 성공적으로 등록되었습니다")
     
-        # 테이블이 이미 존재하는지 확인
+        # 데이터베이스 초기화
         try:
+            # 데이터베이스 연결 테스트
+            db.engine.execute('SELECT 1')
+            logger.info("데이터베이스 연결 성공")
+            
+            # 테이블 생성
             engine = db.engine
             inspector = db.inspect(engine)
             existing_tables = inspector.get_table_names()
             
-            # 테이블이 이미 존재하면 create_all()을 건너뜁니다
-            if 'user' in existing_tables:
-                logger.info("데이터베이스 테이블이 이미 존재합니다. 테이블 생성 건너뜀.")
-            else:
+            if 'user' not in existing_tables:
                 logger.info("데이터베이스 테이블 생성 시작...")
                 db.create_all()
                 logger.info("데이터베이스 테이블이 성공적으로 생성되었습니다")
                 
-                # 기본 사용자 생성 (필요한 경우)
+                # 기본 사용자 생성
                 from app.utils import create_default_user
                 try:
                     create_default_user()
                 except Exception as e:
                     logger.error(f"기본 사용자 생성 중 오류: {e}")
+            else:
+                logger.info("데이터베이스 테이블이 이미 존재합니다.")
                 
         except Exception as e:
             logger.error(f"데이터베이스 초기화 중 오류: {e}")
-            db.session.rollback()
+            logger.warning("애플리케이션은 계속 실행되지만 데이터베이스 기능은 제한될 수 있습니다.")
     
     return app

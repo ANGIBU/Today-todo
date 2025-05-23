@@ -1,0 +1,110 @@
+# docker/docker-compose.yml
+
+version: '3.8'
+
+services:
+  # 데이터베이스 서비스
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: dks12345
+      MYSQL_DATABASE: today_talk
+      MYSQL_USER: livon
+      MYSQL_PASSWORD: dks12345
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - smartlivon_network
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --secure-file-priv=""
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pdks12345"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 포트폴리오 프로젝트
+  portfolio:
+    build: 
+      context: /home/livon/projects/portfolio
+    container_name: portfolio
+    restart: always
+    volumes:
+      - /home/livon/projects/portfolio:/app
+    ports:
+      - "5002:5002"
+    networks:
+      - smartlivon_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Today Talk 프로젝트
+  today_talk:
+    build: 
+      context: /home/livon/projects/today_talk
+    container_name: today_talk
+    restart: always
+    volumes:
+      - /home/livon/projects/today_talk:/app
+    ports:
+      - "5003:5003"
+    networks:
+      - smartlivon_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://livon:dks12345@mysql:3306/today_talk
+
+  # Today Todo 프로젝트
+  today_todo:
+    build: 
+      context: /home/livon/projects/today_todo
+    container_name: today_todo
+    restart: always
+    volumes:
+      - /home/livon/projects/today_todo:/app
+    ports:
+      - "5005:5005"
+    networks:
+      - smartlivon_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://livon:dks12345@mysql:3306/today_todo
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - SECRET_KEY=your_secret_key_here
+
+  # Nginx 리버스 프록시
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/log:/var/log/nginx
+      - /etc/letsencrypt:/etc/letsencrypt
+    networks:
+      - smartlivon_network
+    depends_on:
+      - portfolio
+      - today_talk
+      - today_todo
+
+networks:
+  smartlivon_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
