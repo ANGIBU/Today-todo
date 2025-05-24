@@ -15,10 +15,12 @@
     <section class="profile-section">
         <div class="profile-header">
             <div class="profile-image">
-                <img src="{{ url_for('static', filename='images/' + user.profile_image) }}" alt="프로필 이미지">
+                <div class="default-profile-icon">
+                    <i class="fas fa-user"></i>
+                </div>
             </div>
             <div class="profile-info">
-                <h2 class="profile-nickname" id="profileNickname">{{ user.nickname }}</h2>
+                <h2 class="profile-nickname" id="profileNickname">{{ user.nickname or user.username }}</h2>
                 <p class="profile-username">@{{ user.username }}</p>
                 <p class="profile-bio" id="profileBio">{{ user.bio or '소개글이 없습니다.' }}</p>
             </div>

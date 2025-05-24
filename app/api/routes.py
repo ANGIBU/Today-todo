@@ -32,6 +32,77 @@ def get_user_info():
     print(f"비인증 사용자 - anonymous_id: {anonymous_id}, user_id: {user_id}")
     return user_id, anonymous_id, None
 
+# 사용자 프로필 API 엔드포인트
+@api.route('/user/profile', methods=['GET'])
+def get_user_profile():
+    """사용자 프로필 정보 반환"""
+    try:
+        user_id, anonymous_id, user = get_user_info()
+        
+        if not user_id or not user:
+            return jsonify({'error': '로그인이 필요합니다.'}), 401
+        
+        # 팔로워/팔로잉 수 계산
+        followers_count = user.followers.count() if hasattr(user, 'followers') else 0
+        following_count = user.followed.count() if hasattr(user, 'followed') else 0
+        
+        profile_data = {
+            'id': user.id,
+            'username': user.username,
+            'nickname': user.nickname or user.username,
+            'email': user.email,
+            'bio': user.bio,
+            'profile_image': user.profile_image,
+            'followers_count': followers_count,
+            'following_count': following_count
+        }
+        
+        return jsonify(profile_data)
+    except Exception as e:
+        logger.error(f"프로필 조회 중 오류: {str(e)}")
+        return jsonify({'error': '사용자 정보를 가져오는 중 오류가 발생했습니다.'}), 500
+
+@api.route('/user/profile', methods=['PUT'])
+def update_user_profile():
+    """사용자 프로필 업데이트"""
+    try:
+        user_id, anonymous_id, user = get_user_info()
+        
+        if not user_id or not user:
+            return jsonify({'error': '로그인이 필요합니다.'}), 401
+        
+        data = request.json
+        
+        if 'nickname' in data:
+            user.nickname = data['nickname']
+            session['nickname'] = data['nickname']
+        if 'bio' in data:
+            user.bio = data['bio']
+        
+        db.session.commit()
+        logger.info(f"프로필 업데이트 성공: {user.username}")
+        
+        # 업데이트된 프로필 데이터 반환
+        followers_count = user.followers.count() if hasattr(user, 'followers') else 0
+        following_count = user.followed.count() if hasattr(user, 'followed') else 0
+        
+        profile_data = {
+            'id': user.id,
+            'username': user.username,
+            'nickname': user.nickname or user.username,
+            'email': user.email,
+            'bio': user.bio,
+            'profile_image': user.profile_image,
+            'followers_count': followers_count,
+            'following_count': following_count
+        }
+        
+        return jsonify(profile_data)
+    except Exception as e:
+        logger.error(f"프로필 업데이트 중 오류: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': '프로필 업데이트 중 오류가 발생했습니다.'}), 500
+
 # Todo API 엔드포인트
 @api.route('/todos', methods=['GET'])
 def get_todos():
