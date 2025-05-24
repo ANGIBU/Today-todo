@@ -3,7 +3,8 @@
 CREATE DATABASE IF NOT EXISTS today_talk;
 CREATE DATABASE IF NOT EXISTS today_todo;
 
--- 권한 설정
+-- 외부 접속을 위한 권한 설정 추가
+CREATE USER IF NOT EXISTS 'livon'@'%' IDENTIFIED BY 'dks12345';
 GRANT ALL PRIVILEGES ON today_talk.* TO 'livon'@'%';
 GRANT ALL PRIVILEGES ON today_todo.* TO 'livon'@'%';
 FLUSH PRIVILEGES;
@@ -113,7 +114,8 @@ CREATE TABLE IF NOT EXISTS user (
 
 -- 기본 사용자 추가 (비밀번호: password123)
 INSERT INTO user (username, email, password_hash, nickname) VALUES
-('default_user', 'default@example.com', 'pbkdf2:sha256:150000$LHrIUGlx$8e32ab8427e05153a9e932968c5a89a510946e2d930fe9d6ea289d6fd166397e', '기본 사용자');
+('default_user', 'default@example.com', 'pbkdf2:sha256:150000$LHrIUGlx$8e32ab8427e05153a9e932968c5a89a510946e2d930fe9d6ea289d6fd166397e', '기본 사용자')
+ON DUPLICATE KEY UPDATE username=username;
 
 -- category 테이블 생성
 CREATE TABLE IF NOT EXISTS category (
@@ -129,7 +131,8 @@ CREATE TABLE IF NOT EXISTS category (
 INSERT INTO category (name, color, user_id) VALUES 
 ('업무', '#3498db', 1),
 ('개인', '#2ecc71', 1),
-('중요', '#e74c3c', 1);
+('중요', '#e74c3c', 1)
+ON DUPLICATE KEY UPDATE name=name;
 
 -- todo 테이블 생성
 CREATE TABLE IF NOT EXISTS todo (
@@ -174,4 +177,5 @@ CREATE TABLE IF NOT EXISTS notification (
 INSERT INTO todo (title, description, date, user_id, category_id) VALUES
 ('예제 할 일', '이것은 예제 할 일입니다.', NOW(), 1, 1),
 ('프로젝트 완료하기', '서버 구축 프로젝트 마무리', DATE_ADD(NOW(), INTERVAL 3 DAY), 1, 1),
-('운동하기', '30분 조깅', DATE_ADD(NOW(), INTERVAL 1 DAY), 1, 2);
+('운동하기', '30분 조깅', DATE_ADD(NOW(), INTERVAL 1 DAY), 1, 2)
+ON DUPLICATE KEY UPDATE title=title;
