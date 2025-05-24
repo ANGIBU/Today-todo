@@ -50,11 +50,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (followersCount) {
-            followersCount.querySelector('.stat-value').textContent = profileData.followers_count;
+            followersCount.querySelector('.stat-value').textContent = profileData.followers_count || 0;
         }
         
         if (followingCount) {
-            followingCount.querySelector('.stat-value').textContent = profileData.following_count;
+            followingCount.querySelector('.stat-value').textContent = profileData.following_count || 0;
+        }
+        
+        // 프로필 이미지 처리
+        const profileImage = document.querySelector('.profile-image');
+        if (profileImage && profileData.profile_image && profileData.profile_image !== 'default.jpg') {
+            // 실제 프로필 이미지가 있는 경우
+            const imgElement = document.createElement('img');
+            imgElement.src = `/static/images/${profileData.profile_image}`;
+            imgElement.alt = '프로필 이미지';
+            imgElement.onerror = function() {
+                // 이미지 로드 실패시 기본 아이콘 표시
+                this.style.display = 'none';
+            };
+            
+            const defaultIcon = profileImage.querySelector('.default-profile-icon');
+            if (defaultIcon) {
+                profileImage.insertBefore(imgElement, defaultIcon);
+            }
         }
     }
     
