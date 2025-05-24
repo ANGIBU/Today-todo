@@ -13,36 +13,6 @@ import pymysql
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def test_mysql_connection(uri):
-    """MySQL 연결 테스트"""
-    try:
-        # URI에서 연결 정보 추출
-        if 'mysql' in uri:
-            parts = uri.split('@')[0].split('//')[1].split(':')
-            user = parts[0]
-            password = parts[1]
-            
-            host_db = uri.split('@')[1]
-            host = host_db.split(':')[0]
-            port_db = host_db.split(':')[1]
-            port = int(port_db.split('/')[0])
-            database = port_db.split('/')[1].split('?')[0]
-            
-            connection = pymysql.connect(
-                host=host,
-                port=port,
-                user=user,
-                password=password,
-                database=database,
-                connect_timeout=5
-            )
-            connection.close()
-            return True
-    except Exception as e:
-        logger.error(f"MySQL 연결 테스트 실패: {e}")
-        return False
-    return False
-
 def create_app(config_name='development'):
     app = Flask(__name__)
     
@@ -51,23 +21,6 @@ def create_app(config_name='development'):
         app.config.from_object('config.ProductionConfig')
     else:
         app.config.from_object('config.DevelopmentConfig')
-    
-    # MySQL 연결 테스트
-    original_uri = app.config['SQLALCHEMY_DATABASE_URI']
-    is_mysql = 'mysql' in original_uri
-    
-    if is_mysql:
-        mysql_available = test_mysql_connection(original_uri)
-        
-        if not mysql_available:
-            logger.warning("MySQL 연결 실패. SQLite로 폴백합니다.")
-            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo_fallback.db'
-            # SQLite 사용 시 MySQL 전용 설정 제거
-            app.config.pop('SQLALCHEMY_ENGINE_OPTIONS', None)
-            app.config.pop('SQLALCHEMY_POOL_RECYCLE', None)
-            app.config.pop('SQLALCHEMY_POOL_TIMEOUT', None)
-            app.config.pop('SQLALCHEMY_POOL_SIZE', None)
-            app.config.pop('SQLALCHEMY_MAX_OVERFLOW', None)
     
     # 디버그 설정
     if app.config['DEBUG']:
@@ -130,19 +83,13 @@ def create_app(config_name='development'):
         
         logger.info("모든 블루프린트가 성공적으로 등록되었습니다")
     
-        # 데이터베이스 초기화
+        # 데이터베이스 초기화 (MySQL 전용)
         try:
             # 데이터베이스 연결 테스트
-            if 'sqlite' in str(db.engine.url):
-                # SQLite용 간단한 테스트
-                with db.engine.connect() as conn:
-                    conn.execute(text('SELECT 1'))
-            else:
-                # MySQL용 테스트
-                with db.engine.connect() as conn:
-                    result = conn.execute(text('SELECT 1'))
-                    result.fetchone()
-            logger.info("데이터베이스 연결 성공")
+            with db.engine.connect() as conn:
+                result = conn.execute(text('SELECT 1'))
+                result.fetchone()
+            logger.info("MySQL 데이터베이스 연결 성공")
             
             # 테이블 생성
             engine = db.engine
@@ -164,7 +111,8 @@ def create_app(config_name='development'):
                 logger.info("데이터베이스 테이블이 이미 존재합니다.")
                 
         except Exception as e:
-            logger.error(f"데이터베이스 초기화 중 오류: {e}")
-            logger.warning("애플리케이션은 계속 실행되지만 데이터베이스 기능은 제한될 수 있습니다.")
+            logger.error(f"MySQL 데이터베이스 연결 실패: {e}")
+            logger.error("애플리케이션을 시작할 수 없습니다. MySQL 연결을 확인해주세요.")
+            raise e  # SQLite 폴백 대신 오류 발생시켜 문제 해결 강제
     
     return app

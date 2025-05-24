@@ -14,7 +14,7 @@ class Config:
     # Docker 환경 체크
     IS_DOCKER = os.environ.get('IS_DOCKER', 'false').lower() == 'true'
     
-    # MySQL 연결 설정
+    # MySQL 연결 설정 (SQLite 폴백 제거)
     if os.environ.get('SQLALCHEMY_DATABASE_URI'):
         # 환경변수에 직접 지정된 경우 우선 사용
         SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
@@ -25,24 +25,22 @@ class Config:
         # 로컬 개발환경에서는 Docker 호스트의 IP로 연결
         SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://livon:dks12345@192.168.123.104:3306/today_todo?charset=utf8mb4'
     
-    # 백업용 SQLite 설정 (MySQL 연결 실패시)
-    SQLITE_DATABASE_URI = 'sqlite:///todo_app.db'
-    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_POOL_RECYCLE = 3600  # 1시간마다 연결 재생성
-    SQLALCHEMY_POOL_TIMEOUT = 30
+    SQLALCHEMY_POOL_TIMEOUT = 60    # 타임아웃 증가
     SQLALCHEMY_POOL_SIZE = 10
     SQLALCHEMY_MAX_OVERFLOW = 20
     
-    # 연결 풀 설정
+    # 연결 풀 설정 (연결 설정 최적화)
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 3600,
         'connect_args': {
-            'connect_timeout': 10,
-            'read_timeout': 10,
-            'write_timeout': 10,
-            'charset': 'utf8mb4'
+            'connect_timeout': 30,      # 연결 타임아웃 증가
+            'read_timeout': 30,         # 읽기 타임아웃 증가
+            'write_timeout': 30,        # 쓰기 타임아웃 증가
+            'charset': 'utf8mb4',
+            'autocommit': True
         }
     }
 
@@ -55,7 +53,8 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    # 테스트 환경에서도 MySQL 사용
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://livon:dks12345@192.168.123.104:3306/today_todo?charset=utf8mb4'
 
 class ProductionConfig(Config):
     # 운영환경에서는 환경변수에서 가져오거나 Docker MySQL 사용
