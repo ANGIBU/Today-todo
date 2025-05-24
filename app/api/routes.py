@@ -322,72 +322,180 @@ def clear_notifications():
         db.session.rollback()
         return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
 
-# Explore API 엔드포인트
+# Explore API 엔드포인트 - explore.js가 기대하는 구조로 수정
 @api.route('/explore/users', methods=['GET'])
 def get_explore_users():
-    """공개 사용자 목록 가져오기"""
+    """탐색 페이지 사용자 목록 - 팔로우 중인 사용자와 추천 사용자"""
     try:
-        # 공개 할 일이 있는 사용자들 조회
-        users = db.session.query(User).join(Todo).filter(
-            Todo.is_public == True
-        ).distinct().all()
+        # 로그인 확인
+        if current_user.is_authenticated:
+            current_user_id = current_user.id
+        else:
+            current_user_id = session.get('user_id')
         
-        user_data = []
-        for user in users:
-            public_todos_count = Todo.query.filter_by(
-                user_id=user.id,
-                is_public=True
-            ).count()
-            
-            user_info = {
-                'id': user.id,
-                'username': user.username,
-                'nickname': user.nickname or user.username,
-                'profile_image': user.profile_image,
-                'bio': user.bio,
-                'public_todos_count': public_todos_count
-            }
-            user_data.append(user_info)
+        if not current_user_id:
+            return jsonify({'following': [], 'recommended': []}), 200
         
-        return jsonify(user_data)
+        user = User.query.get(current_user_id)
+        if not user:
+            return jsonify({'following': [], 'recommended': []}), 200
+        
+        # 팔로우 중인 사용자
+        following_users = user.followed.all()
+        following_result = []
+        for follow_user in following_users:
+            following_result.append({
+                'id': follow_user.id,
+                'username': follow_user.username,
+                'nickname': follow_user.nickname or follow_user.username,
+                'profile_image': follow_user.profile_image
+            })
+        
+        # 추천 사용자 (자신과 이미 팔로우한 사용자 제외)
+        following_ids = [u.id for u in following_users]
+        following_ids.append(current_user_id)
+        recommended_users = User.query.filter(~User.id.in_(following_ids)).limit(10).all()
+        
+        recommended_result = []
+        for rec_user in recommended_users:
+            recommended_result.append({
+                'id': rec_user.id,
+                'username': rec_user.username,
+                'nickname': rec_user.nickname or rec_user.username,
+                'profile_image': rec_user.profile_image,
+                'is_following': False
+            })
+        
+        return jsonify({
+            'following': following_result,
+            'recommended': recommended_result
+        })
     except Exception as e:
         logger.error(f"탐색 사용자 조회 중 오류 발생: {str(e)}")
         db.session.rollback()
-        return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
+        return jsonify({'following': [], 'recommended': []}), 200
 
 @api.route('/explore/todos', methods=['GET'])
 def get_explore_todos():
-    """공개 할 일 목록 가져오기"""
+    """팔로우 중인 사용자의 공개 할 일 목록 - 배열 형태로 반환"""
     try:
-        # 페이지네이션 파라미터
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
+        # 로그인 확인
+        if current_user.is_authenticated:
+            current_user_id = current_user.id
+        else:
+            current_user_id = session.get('user_id')
         
-        # 공개 할 일 조회
-        public_todos = Todo.query.filter_by(is_public=True)\
-                                .order_by(Todo.created_at.desc())\
-                                .paginate(page=page, per_page=per_page)
+        if not current_user_id:
+            return jsonify([]), 200
         
-        todos_data = []
-        for todo in public_todos.items:
-            todo_info = todo.to_dict()
-            # 사용자 정보 추가
-            if todo.user:
-                todo_info['user'] = {
-                    'id': todo.user.id,
-                    'username': todo.user.username,
-                    'nickname': todo.user.nickname or todo.user.username,
-                    'profile_image': todo.user.profile_image
+        user = User.query.get(current_user_id)
+        if not user:
+            return jsonify([]), 200
+        
+        # 팔로우 중인 사용자의 공개 할 일
+        followed_todos = user.followed_todos().all()
+        
+        result = []
+        for todo in followed_todos:
+            todo_user = User.query.get(todo.user_id)
+            if not todo_user:
+                continue
+                
+            category = None
+            category_color = None
+            
+            if todo.category_id:
+                category_obj = Category.query.get(todo.category_id)
+                if category_obj:
+                    category = category_obj.name
+                    category_color = category_obj.color
+            
+            result.append({
+                'id': todo.id,
+                'title': todo.title,
+                'description': todo.description or '',
+                'date': todo.date.strftime('%Y-%m-%d'),
+                'completed': todo.completed,
+                'category': category,
+                'category_color': category_color,
+                'created_at': todo.created_at.strftime('%Y-%m-%d %H:%M'),
+                'user': {
+                    'id': todo_user.id,
+                    'username': todo_user.username,
+                    'nickname': todo_user.nickname or todo_user.username,
+                    'profile_image': todo_user.profile_image
                 }
-            todos_data.append(todo_info)
+            })
         
-        return jsonify({
-            'todos': todos_data,
-            'total': public_todos.total,
-            'pages': public_todos.pages,
-            'current_page': page
-        })
+        return jsonify(result)
     except Exception as e:
         logger.error(f"탐색 할 일 조회 중 오류 발생: {str(e)}")
         db.session.rollback()
-        return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
+        return jsonify([]), 200
+
+# 팔로우 API 엔드포인트
+@api.route('/users/<int:user_id>/follow', methods=['POST'])
+def follow_user(user_id):
+    """사용자 팔로우"""
+    try:
+        # 로그인 확인
+        if current_user.is_authenticated:
+            current_user_id = current_user.id
+            current_user_obj = current_user
+        else:
+            current_user_id = session.get('user_id')
+            if not current_user_id:
+                return jsonify({'error': '로그인이 필요합니다.'}), 401
+            current_user_obj = User.query.get(current_user_id)
+            if not current_user_obj:
+                return jsonify({'error': '로그인이 필요합니다.'}), 401
+        
+        if current_user_id == user_id:
+            return jsonify({'error': '자신을 팔로우할 수 없습니다.'}), 400
+            
+        user_to_follow = User.query.get(user_id)
+        if not user_to_follow:
+            return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
+        
+        current_user_obj.follow(user_to_follow)
+        db.session.commit()
+        
+        # 알림 생성
+        from app.utils import create_notification
+        message = f"{current_user_obj.nickname or current_user_obj.username}님이 회원님을 팔로우하기 시작했습니다."
+        create_notification(user_id, message, 'follow', current_user_id)
+        
+        return jsonify({'result': 'success'})
+    except Exception as e:
+        logger.error(f"팔로우 중 오류: {e}")
+        db.session.rollback()
+        return jsonify({'error': '팔로우 처리 중 오류가 발생했습니다.'}), 500
+
+@api.route('/users/<int:user_id>/unfollow', methods=['POST'])
+def unfollow_user(user_id):
+    """사용자 언팔로우"""
+    try:
+        # 로그인 확인
+        if current_user.is_authenticated:
+            current_user_id = current_user.id
+            current_user_obj = current_user
+        else:
+            current_user_id = session.get('user_id')
+            if not current_user_id:
+                return jsonify({'error': '로그인이 필요합니다.'}), 401
+            current_user_obj = User.query.get(current_user_id)
+            if not current_user_obj:
+                return jsonify({'error': '로그인이 필요합니다.'}), 401
+            
+        user_to_unfollow = User.query.get(user_id)
+        if not user_to_unfollow:
+            return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
+        
+        current_user_obj.unfollow(user_to_unfollow)
+        db.session.commit()
+        
+        return jsonify({'result': 'success'})
+    except Exception as e:
+        logger.error(f"언팔로우 중 오류: {e}")
+        db.session.rollback()
+        return jsonify({'error': '언팔로우 처리 중 오류가 발생했습니다.'}), 500
