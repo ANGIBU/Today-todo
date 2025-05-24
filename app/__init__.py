@@ -69,15 +69,10 @@ def create_app(config_name='development'):
             app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo_fallback.db'
             # SQLite 사용 시 MySQL 전용 설정 제거
             app.config.pop('SQLALCHEMY_ENGINE_OPTIONS', None)
-        else:
-            # MySQL 사용 시 연결 풀 설정
-            app.config.setdefault('SQLALCHEMY_ENGINE_OPTIONS', {
-                'pool_size': 5,
-                'max_overflow': 10,
-                'pool_recycle': 300,
-                'pool_pre_ping': True,
-                'pool_timeout': 30
-            })
+            app.config.pop('SQLALCHEMY_POOL_RECYCLE', None)
+            app.config.pop('SQLALCHEMY_POOL_TIMEOUT', None)
+            app.config.pop('SQLALCHEMY_POOL_SIZE', None)
+            app.config.pop('SQLALCHEMY_MAX_OVERFLOW', None)
     
     # 디버그 설정
     if app.config['DEBUG']:

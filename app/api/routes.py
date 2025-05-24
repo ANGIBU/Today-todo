@@ -1,7 +1,7 @@
 # app/api/routes.py
 from flask import jsonify, request, session
 from flask_login import current_user, login_required
-from app.extensions import db
+from app import db
 from app.models import Todo, Category, Notification, User
 from app.api import api
 import datetime
@@ -319,5 +319,75 @@ def clear_notifications():
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"알림 삭제 중 오류 발생: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
+
+# Explore API 엔드포인트
+@api.route('/explore/users', methods=['GET'])
+def get_explore_users():
+    """공개 사용자 목록 가져오기"""
+    try:
+        # 공개 할 일이 있는 사용자들 조회
+        users = db.session.query(User).join(Todo).filter(
+            Todo.is_public == True
+        ).distinct().all()
+        
+        user_data = []
+        for user in users:
+            public_todos_count = Todo.query.filter_by(
+                user_id=user.id,
+                is_public=True
+            ).count()
+            
+            user_info = {
+                'id': user.id,
+                'username': user.username,
+                'nickname': user.nickname or user.username,
+                'profile_image': user.profile_image,
+                'bio': user.bio,
+                'public_todos_count': public_todos_count
+            }
+            user_data.append(user_info)
+        
+        return jsonify(user_data)
+    except Exception as e:
+        logger.error(f"탐색 사용자 조회 중 오류 발생: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
+
+@api.route('/explore/todos', methods=['GET'])
+def get_explore_todos():
+    """공개 할 일 목록 가져오기"""
+    try:
+        # 페이지네이션 파라미터
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        
+        # 공개 할 일 조회
+        public_todos = Todo.query.filter_by(is_public=True)\
+                                .order_by(Todo.created_at.desc())\
+                                .paginate(page=page, per_page=per_page)
+        
+        todos_data = []
+        for todo in public_todos.items:
+            todo_info = todo.to_dict()
+            # 사용자 정보 추가
+            if todo.user:
+                todo_info['user'] = {
+                    'id': todo.user.id,
+                    'username': todo.user.username,
+                    'nickname': todo.user.nickname or todo.user.username,
+                    'profile_image': todo.user.profile_image
+                }
+            todos_data.append(todo_info)
+        
+        return jsonify({
+            'todos': todos_data,
+            'total': public_todos.total,
+            'pages': public_todos.pages,
+            'current_page': page
+        })
+    except Exception as e:
+        logger.error(f"탐색 할 일 조회 중 오류 발생: {str(e)}")
         db.session.rollback()
         return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
