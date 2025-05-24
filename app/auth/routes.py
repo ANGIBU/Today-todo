@@ -1,5 +1,5 @@
 # app/auth/routes.py
-from flask import render_template, redirect, url_for, request, session, flash, jsonify
+from flask import render_template, redirect, url_for, request, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from app.auth import auth
 from app.models import User, Category
@@ -41,7 +41,6 @@ def login():
                 session['nickname'] = user.nickname
                 
                 logger.info(f"로그인 성공: {username}")
-                flash('로그인되었습니다.', 'message')
                 
                 # 다음에 이동할 페이지
                 next_page = request.args.get('next')
@@ -50,11 +49,9 @@ def login():
                 return redirect(next_page)
             
             logger.warning(f"로그인 실패 (잘못된 자격 증명): {username}")
-            flash('아이디 또는 비밀번호가 잘못되었습니다.')
         except Exception as e:
             logger.error(f"로그인 중 예외 발생: {str(e)}")
             db.session.rollback()
-            flash('로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
     
     return render_template('public/auth.html', action='login')
 
@@ -76,13 +73,11 @@ def register():
         try:
             # 사용자명 중복 확인
             if User.query.filter_by(username=username).first():
-                flash('이미 존재하는 아이디입니다.')
-                return render_template('public/auth.html', action='register')
+                return render_template('public/auth.html', action='register', error='이미 존재하는 아이디입니다.')
             
             # 이메일 중복 확인
             if User.query.filter_by(email=email).first():
-                flash('이미 존재하는 이메일입니다.')
-                return render_template('public/auth.html', action='register')
+                return render_template('public/auth.html', action='register', error='이미 존재하는 이메일입니다.')
             
             # 새 사용자 생성
             user = User(username=username, email=email, nickname=nickname)
@@ -109,12 +104,11 @@ def register():
             db.session.commit()
             
             logger.info(f"회원가입 성공: {username}")
-            flash('회원가입이 완료되었습니다. 로그인해주세요.')
             return redirect(url_for('auth.login'))
         except Exception as e:
             logger.error(f"회원가입 중 예외 발생: {str(e)}")
             db.session.rollback()
-            flash('회원가입 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+            return render_template('public/auth.html', action='register', error='회원가입 처리 중 오류가 발생했습니다.')
     
     return render_template('public/auth.html', action='register')
 
@@ -132,7 +126,6 @@ def logout():
     session.pop('username', None)
     session.pop('nickname', None)
     
-    flash('로그아웃되었습니다.')
     return redirect(url_for('main.index'))
 
 @auth.route('/api/user/profile', methods=['GET'])

@@ -16,15 +16,9 @@
                 <h1>{% if action == 'login' %}로그인{% else %}회원가입{% endif %}</h1>
             </div>
             
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="flash-messages">
-                        {% for message in messages %}
-                            <div class="flash-message">{{ message }}</div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
+            {% if error %}
+                <div class="error-message-box">{{ error }}</div>
+            {% endif %}
             
             <div class="auth-form">
                 {% if action == 'login' %}

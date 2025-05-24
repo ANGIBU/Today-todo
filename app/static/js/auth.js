@@ -96,17 +96,4 @@ document.addEventListener('DOMContentLoaded', function() {
         // 입력 필드에 포커스
         inputElement.focus();
     }
-    
-    // 플래시 메시지 자동 사라짐 기능
-    const flashMessages = document.querySelectorAll('.flash-message');
-    if (flashMessages.length > 0) {
-        setTimeout(() => {
-            flashMessages.forEach(message => {
-                message.style.opacity = '0';
-                setTimeout(() => {
-                    message.remove();
-                }, 300);
-            });
-        }, 5000);
-    }
 });
