@@ -2,8 +2,9 @@
 import os
 from flask import Flask, session, request, g
 from flask_login import LoginManager, current_user
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from app.extensions import db, migrate, login_manager
+from sqlalchemy import text
 import uuid
 import logging
 import pymysql
@@ -11,12 +12,6 @@ import pymysql
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# 데이터베이스 초기화
-db = SQLAlchemy()
-migrate = Migrate()
-login_manager = LoginManager()
-login_manager.login_view = 'auth.auth_page'
 
 def test_mysql_connection(uri):
     """MySQL 연결 테스트"""
@@ -82,6 +77,7 @@ def create_app(config_name='development'):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    login_manager.login_view = 'auth.auth_page'
     
     # 유저 로더 설정
     from app.models import User
@@ -139,11 +135,12 @@ def create_app(config_name='development'):
             # 데이터베이스 연결 테스트
             if 'sqlite' in str(db.engine.url):
                 # SQLite용 간단한 테스트
-                db.engine.execute('SELECT 1')
+                with db.engine.connect() as conn:
+                    conn.execute(text('SELECT 1'))
             else:
                 # MySQL용 테스트
                 with db.engine.connect() as conn:
-                    result = conn.execute(db.text('SELECT 1'))
+                    result = conn.execute(text('SELECT 1'))
                     result.fetchone()
             logger.info("데이터베이스 연결 성공")
             
