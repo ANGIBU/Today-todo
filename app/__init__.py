@@ -18,21 +18,35 @@ migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.auth_page'
 
-def test_mysql_connection(host, user, password, database):
+def test_mysql_connection(uri):
     """MySQL 연결 테스트"""
     try:
-        connection = pymysql.connect(
-            host=host,
-            user=user,
-            password=password,
-            database=database,
-            connect_timeout=5
-        )
-        connection.close()
-        return True
+        # URI에서 연결 정보 추출
+        if 'mysql' in uri:
+            parts = uri.split('@')[0].split('//')[1].split(':')
+            user = parts[0]
+            password = parts[1]
+            
+            host_db = uri.split('@')[1]
+            host = host_db.split(':')[0]
+            port_db = host_db.split(':')[1]
+            port = int(port_db.split('/')[0])
+            database = port_db.split('/')[1].split('?')[0]
+            
+            connection = pymysql.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                database=database,
+                connect_timeout=5
+            )
+            connection.close()
+            return True
     except Exception as e:
         logger.error(f"MySQL 연결 테스트 실패: {e}")
         return False
+    return False
 
 def create_app(config_name='development'):
     app = Flask(__name__)
@@ -43,31 +57,31 @@ def create_app(config_name='development'):
     else:
         app.config.from_object('config.DevelopmentConfig')
     
-    # MySQL 연결 테스트 (production 모드에서만)
-    if config_name == 'production':
-        mysql_available = test_mysql_connection(
-            host='192.168.123.104',
-            user='livon',
-            password='dks12345',
-            database='today_todo'
-        )
+    # MySQL 연결 테스트
+    original_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    is_mysql = 'mysql' in original_uri
+    
+    if is_mysql:
+        mysql_available = test_mysql_connection(original_uri)
         
         if not mysql_available:
             logger.warning("MySQL 연결 실패. SQLite로 폴백합니다.")
             app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo_fallback.db'
+            # SQLite 사용 시 MySQL 전용 설정 제거
+            app.config.pop('SQLALCHEMY_ENGINE_OPTIONS', None)
+        else:
+            # MySQL 사용 시 연결 풀 설정
+            app.config.setdefault('SQLALCHEMY_ENGINE_OPTIONS', {
+                'pool_size': 5,
+                'max_overflow': 10,
+                'pool_recycle': 300,
+                'pool_pre_ping': True,
+                'pool_timeout': 30
+            })
     
     # 디버그 설정
     if app.config['DEBUG']:
         logging.basicConfig(level=logging.DEBUG)
-    
-    # 데이터베이스 연결 풀 설정
-    app.config.setdefault('SQLALCHEMY_ENGINE_OPTIONS', {
-        'pool_size': 5,
-        'max_overflow': 10,
-        'pool_recycle': 300,
-        'pool_pre_ping': True,
-        'pool_timeout': 30
-    })
     
     # 확장 프로그램 초기화
     db.init_app(app)
@@ -128,7 +142,14 @@ def create_app(config_name='development'):
         # 데이터베이스 초기화
         try:
             # 데이터베이스 연결 테스트
-            db.engine.execute('SELECT 1')
+            if 'sqlite' in str(db.engine.url):
+                # SQLite용 간단한 테스트
+                db.engine.execute('SELECT 1')
+            else:
+                # MySQL용 테스트
+                with db.engine.connect() as conn:
+                    result = conn.execute(db.text('SELECT 1'))
+                    result.fetchone()
             logger.info("데이터베이스 연결 성공")
             
             # 테이블 생성
